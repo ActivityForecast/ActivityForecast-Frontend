@@ -14,7 +14,6 @@ export default function Notification() {
       <button
         onClick={() => setOpen(true)}
         className="relative p-2 rounded hover:bg-gray-100"
-        aria-label="알림 열기"
       >
         <AlarmIcon />
         {/* 빨간 점인데 만약 알림이 없으면 제거하는 방향 검토중*/}
