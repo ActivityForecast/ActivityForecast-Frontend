@@ -1,9 +1,9 @@
-//import ProfileDropdown from './ProfileDropdown';
+import ProfileDropdown from './ProfileDropdown';
 import LocationSelector from './LocationSelector';
 import Notification from './Notification';
 import Menu from './Menu';
 import Home from './Home';
-import LoginMenu from './LoginMenu';
+//import LoginMenu from './LoginMenu';
 
 function Gnb() {
   return (
@@ -13,9 +13,9 @@ function Gnb() {
         <Home />
       </div>
       <LocationSelector />
-      <div className="flex items-center gap-2 sm:gap-4">
-        <LoginMenu />
-        {/* <ProfileDropdown />*/}
+      <div className="flex items-center gap-1 sm:gap-2">
+        {/*  <LoginMenu />*/}
+        <ProfileDropdown />
         <Notification />
       </div>
     </header>
