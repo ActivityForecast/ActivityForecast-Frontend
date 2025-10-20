@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+// 모달이나 메뉴, 사이드바 등에서 외부를 클릭할 시 닫히게 하는 코드입니다.
 export default function useClickOutside(onClickOutside) {
   const ref = useRef(null);
 

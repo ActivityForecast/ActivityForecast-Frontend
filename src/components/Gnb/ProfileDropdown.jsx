@@ -12,7 +12,7 @@ function ProfileDropdown() {
       <DropdownButton className="px-3 py-2 rounded-lg hover:bg-gray-100">
         김활동
       </DropdownButton>
-      <DropdownMenu className="w-32">
+      <DropdownMenu className="w-[120px]">
         <DropdownMenuItem
           className="text-center"
           onClick={() => navigate('/mypage')}
@@ -20,7 +20,7 @@ function ProfileDropdown() {
           마이페이지
         </DropdownMenuItem>
         <DropdownMenuItem
-          className="text-center flex items-center text-[#ef4444] gap-1"
+          className="flex items-center text-[#ef4444] justify-center"
           onClick={() => alert('로그아웃 버튼을 눌렀습니다.')}
         >
           <LogoutIcon />

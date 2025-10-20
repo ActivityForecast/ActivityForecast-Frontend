@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ReactComponent as AlarmIcon } from 'assets/icons/alarm.svg';
+import useClickOutside from 'hooks/useClickOutside';
 
 export default function Notification() {
   const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
-  // 닫기
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && setOpen(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  // 패널 바깥 클릭 시 닫힘
+  const ref = useClickOutside(close);
 
   return (
     <>
@@ -25,18 +22,17 @@ export default function Notification() {
       </button>
 
       {open && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30"
-            onClick={() => setOpen(false)}
-          />
-
-          {/* 오른쪽 사이드패널 닫기 버튼은 디자인 고민 중 */}
-          <aside className="fixed right-0 top-0 h-full w-[320px] sm:w-[360px] bg-white border-l shadow-xl p-4 overflow-y-auto">
+        <div>
+          <div className="fixed inset-0 bg-black/30" />
+          <aside
+            ref={ref}
+            className="fixed right-0 top-0 h-full w-[320px] sm:w-[360px] bg-white border-l shadow-xl p-4 overflow-y-auto"
+          >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold">알림</h2>
+              {/* 닫기 버튼 디자인은 검토중입니다. */}
               <button
-                onClick={() => setOpen(false)}
+                onClick={close}
                 className="px-2 py-1 text-sm rounded hover:bg-gray-100"
               >
                 닫기
@@ -56,7 +52,7 @@ export default function Notification() {
               </li>
             </ul>
           </aside>
-        </>
+        </div>
       )}
     </>
   );
