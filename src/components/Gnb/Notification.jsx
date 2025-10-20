@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ReactComponent as AlarmIcon } from 'assets/icons/alarm.svg';
+import { ReactComponent as CloseIcon } from 'assets/icons/close.svg';
 import useClickOutside from 'hooks/useClickOutside';
 
 export default function Notification() {
@@ -29,12 +30,11 @@ export default function Notification() {
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold">알림</h2>
-              {/* 닫기 버튼 디자인은 검토중입니다. */}
               <button
                 onClick={close}
-                className="px-2 py-1 text-sm rounded hover:bg-gray-100"
+                className="p-2 text-sm rounded hover:bg-gray-100"
               >
-                닫기
+                <CloseIcon />
               </button>
             </div>
 
