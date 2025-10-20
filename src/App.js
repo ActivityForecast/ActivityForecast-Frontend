@@ -4,7 +4,7 @@ function App() {
   return (
     <div>
       <Gnb />
-      <div className="text-red-200">안녕하세요</div>
+      <div className="text-red-200">테일윈드 색상 테스트</div>
     </div>
   );
 }

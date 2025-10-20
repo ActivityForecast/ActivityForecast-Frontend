@@ -1,9 +1,12 @@
 import { ReactComponent as HomeIcon } from 'assets/icons/gnb_home.svg';
+import { Link } from 'react-router-dom';
 function Home() {
   return (
-    <div>
-      <HomeIcon />
-    </div>
+    <Link to="/">
+      <div>
+        <HomeIcon />
+      </div>
+    </Link>
   );
 }
 

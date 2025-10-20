@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 function LoginMenu() {
   return (
-    <div>
-      <Link to="/login">로그인</Link>
-    </div>
+    <Link to="/login">
+      <div className="w-[70px] py-1 flex items-center justify-center rounded-lg text-white hover:bg-blue-500 bg-[#0d99ff]">
+        로그인
+      </div>
+    </Link>
   );
 }
 
