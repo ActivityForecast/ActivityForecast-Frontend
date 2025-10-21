@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ReactComponent as EyeOffIcon } from 'assets/icons/visibility-off.svg';
-import { ReactComponent as EyeOnIcon } from 'assets/icons/visibility-on.svg';
+import { ReactComponent as EyeOffIcon } from 'assets/icons/visibility_off.svg';
+import { ReactComponent as EyeOnIcon } from 'assets/icons/visibility_on.svg';
 
 export default function InputField({
   id,
