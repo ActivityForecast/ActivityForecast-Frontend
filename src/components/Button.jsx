@@ -29,21 +29,21 @@ export default function Button({
   const getStyleByType = (type) => {
     if (disabled) {
       return type === 'outlined'
-        ? 'bg-white border border-i-inactive text-i-inactive'
-        : 'bg-i-inactive text-t-inverse';
+        ? 'bg-white border border-[#94A3B8] text-[#94A3B8]'
+        : 'bg-[#94A3B8] text-white';
     }
 
     if (state === 'danger') {
-      return 'bg-danger text-t-inverse hover:bg-[#B91C1C] hover:text-t-secondary active:bg-[#7F1D1D]';
+      return 'bg-[#dc2626] text-white hover:bg-[#B91C1C] hover:text-[#CBD5E1] active:bg-[#7F1D1D]';
     }
 
     if (type === 'outlined-secondary') {
-      return 'bg-white border border-[#CBD5E1] text-t-default hover:border-[#E2E8F0] hover:text-t-secondary active:border-[#E2E8F0] active:text-t-tertiary';
+      return 'bg-white border border-[#CBD5E1] text-[##64748B] hover:border-[#E2E8F0] hover:text-[#CBD5E1] active:border-[#E2E8F0] active:text-[#E2E8F0]';
     }
 
     return type === 'outlined'
-      ? 'bg-white border border-primary text-primary hover:border-i-hover hover:bg-t-secondary hover:text-i-hover active:border-i-pressed active:text-i-pressed'
-      : 'bg-primary text-t-inverse hover:bg-i-hover active:bg-i-pressed';
+      ? 'bg-white border border-[#4FBFF2] text-[#4FBFF2] hover:border-blue-400 hover:bg-[#CBD5E1] hover:text-blue-400 active:border-blue-600 active:text-blue-600'
+      : 'bg-[#4FBFF2] text-white hover:bg-blue-500 active:bg-blue-600';
   };
 
   const styleTypes = {
