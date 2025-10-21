@@ -23,10 +23,10 @@ export default function Notification() {
 
       {open && (
         <div>
-          <div className="fixed inset-0 bg-black/30" />
+          <div className="fixed z-40 inset-0 bg-black/30" />
           <aside
             ref={ref}
-            className="fixed right-0 top-0 h-full w-[320px] sm:w-[360px] bg-white border-l shadow-xl p-4 overflow-y-auto"
+            className="fixed z-50 right-0 top-0 h-full w-[320px] sm:w-[360px] bg-white border-l shadow-xl p-4 overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold">알림</h2>

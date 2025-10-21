@@ -48,9 +48,9 @@ export default function InputField({
           disabled={isDisabled}
           className={`w-full rounded-xl px-4 py-3 text-md sm:py-4 sm:text-lg ${
             isDisabled
-              ? 'border border-bd-primary/10 bg-b-tertiary text-t-disabled'
-              : 'border border-bd-primary/10 bg-b-secondary text-t-primary hover:border-i-hover focus:border-i-focus focus:outline-none focus:ring-1 focus:ring-green-500'
-          } placeholder-t-default ${error ? 'border-[#ff6060]' : ''}`}
+              ? 'border border-gray-400  text-[#94A3B8]'
+              : 'border border-gray-400  text-black focus:outline-none focus:ring-1 focus:ring-blue-500'
+          } placeholder-[#64748B] ${error ? 'border-[#ff6060]' : ''}`}
         />
 
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -58,7 +58,7 @@ export default function InputField({
             <button
               type="button"
               onClick={togglePasswordVisibility}
-              className="text-t-default hover:text-i-hover"
+              className="text-[#64748B]"
               aria-label={
                 inputType === 'password' ? 'Show password' : 'Hide password'
               }
