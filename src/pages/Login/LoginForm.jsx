@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import InputField from 'components/InputField';
 import Button from 'components/Button';
 import { validateEmail, validatePassword } from 'utils/formValidators';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginForm({
   onSubmit,
@@ -14,6 +15,7 @@ export default function LoginForm({
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isValidated, setIsValidated] = useState(false);
+  const navigate = useNavigate();
 
   const validateForm = useCallback(() => {
     const newErrors = {
@@ -35,6 +37,10 @@ export default function LoginForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isValidated) onSubmit(formData);
+  };
+
+  const handleSignupClick = () => {
+    navigate('/signup');
   };
 
   return (
@@ -67,7 +73,7 @@ export default function LoginForm({
               validator={validatePassword}
               isPassword={true}
             />
-            <div className="cursor-pointer text-right text-md text-emerald-500 underline hover:opacity-50 sm:text-lg">
+            <div className="cursor-pointer text-right text-md text-[#0b0b0b]/50 underline hover:opacity-50 sm:text-lg">
               비밀번호를 잊으셨나요?
             </div>
           </div>
@@ -81,6 +87,15 @@ export default function LoginForm({
           disabled={!isValidated}
         >
           로그인
+        </Button>
+
+        <Button
+          type="button"
+          styleType="outlined"
+          size="py-3.5 w-full text-md"
+          onClick={handleSignupClick}
+        >
+          회원가입
         </Button>
       </form>
     </>
