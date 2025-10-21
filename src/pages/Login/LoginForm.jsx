@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import InputField from 'components/InputField';
 import Button from 'components/Button';
 import { validateEmail, validatePassword } from 'utils/formValidators';
-import ResetPasswordEmailModal from 'login/ResetPasswordEmailModal';
 
 export default function LoginForm({
   onSubmit,
@@ -14,7 +13,6 @@ export default function LoginForm({
   },
 }) {
   const [formData, setFormData] = useState(initialFormData);
-  const [isOpenModal, setIsOpenModal] = useState(false);
   const [isValidated, setIsValidated] = useState(false);
 
   const validateForm = useCallback(() => {
@@ -69,10 +67,7 @@ export default function LoginForm({
               validator={validatePassword}
               isPassword={true}
             />
-            <div
-              onClick={() => setIsOpenModal(true)}
-              className="cursor-pointer text-right text-md text-emerald-500 underline hover:opacity-50 sm:text-lg"
-            >
+            <div className="cursor-pointer text-right text-md text-emerald-500 underline hover:opacity-50 sm:text-lg">
               비밀번호를 잊으셨나요?
             </div>
           </div>
@@ -88,11 +83,6 @@ export default function LoginForm({
           로그인
         </Button>
       </form>
-
-      <ResetPasswordEmailModal
-        isOpen={isOpenModal}
-        onClose={() => setIsOpenModal(false)}
-      />
     </>
   );
 }
