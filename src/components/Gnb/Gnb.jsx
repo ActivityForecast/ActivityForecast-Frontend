@@ -1,4 +1,4 @@
-import ProfileDropdown from './ProfileDropdown';
+// import ProfileDropdown from './ProfileDropdown';
 import LocationSelector from './LocationSelector';
 import Notification from './Notification';
 import Menu from './Menu';
@@ -15,7 +15,7 @@ function Gnb() {
       <LocationSelector />
       <div className="flex items-center gap-1 sm:gap-2">
         <LoginMenu /> {/* 로그인과 프로필 조건부 렌더링 추가 예정 */}
-        <ProfileDropdown />
+    {/*    <ProfileDropdown /> */}
         <Notification />
       </div>
     </header>
