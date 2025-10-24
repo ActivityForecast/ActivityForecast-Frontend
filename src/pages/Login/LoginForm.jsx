@@ -98,7 +98,7 @@ export default function LoginForm({
           회원가입
         </Button>
 
-        {/* 후에 간편로그인 추가 예정 */}
+        {/* 추가: 후에 간편로그인도 둘 예정 */}
       </form>
     </>
   );

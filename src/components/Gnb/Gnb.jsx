@@ -14,7 +14,7 @@ function Gnb() {
       </div>
       <LocationSelector />
       <div className="flex items-center gap-1 sm:gap-2">
-        <LoginMenu /> {/* 로그인과 프로필 조건부 렌더링 추가 예정 */}
+        <LoginMenu /> {/* 추가: 로그인과 프로필 조건부 렌더링 예정 */}
     {/*    <ProfileDropdown /> */}
         <Notification />
       </div>
