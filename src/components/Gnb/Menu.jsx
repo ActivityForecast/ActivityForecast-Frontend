@@ -44,7 +44,7 @@ export default function Menu() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-2 rounded hover:bg-gray-100 text-white"
+        className="p-1 rounded hover:bg-gray-100 text-white"
       >
         <MenuIcon />
       </button>
