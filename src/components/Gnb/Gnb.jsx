@@ -8,7 +8,7 @@ import LoginMenu from './LoginMenu';
 function Gnb() {
   return (
     <header className="flex items-center justify-between h-14 px-2 sm:px-6 border-b bg-white">
-      <div className="flex items-center gap-1 sm:gap-4">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Menu />
         <Home />
       </div>

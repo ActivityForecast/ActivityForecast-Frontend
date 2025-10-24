@@ -1,12 +1,22 @@
-import { Link } from 'react-router-dom';
+import Button from 'components/Button';
+import { useNavigate } from 'react-router-dom';
+
+
 function LoginMenu() {
+
+  const navigate = useNavigate();
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
   return (
-    <Link to="/login">
-      <div className="w-[70px] py-1 flex items-center justify-center rounded-lg text-white hover:bg-blue-500 bg-[#0d99ff]">
-        로그인
-      </div>
-    </Link>
-  );
+    <>
+    <Button
+      onClick={handleLoginClick}
+      size='h-8 text-sm w-[70px]'
+    >
+      로그인
+    </Button>
+    </>)
 }
 
 export default LoginMenu;
