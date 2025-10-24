@@ -1,7 +1,7 @@
 
 export default function WeatherCard({ weather }) {
   return (
-    <div className="mx-auto w-full max-w-[480px] h-80 rounded-md bg-gradient-to-r from-[#3b5eea] to-[#9ad5ff] p-5 text-white flex items-center">
+    <div className="mx-auto w-full max-w-[480px] h-60 rounded-md bg-gradient-to-r from-[#3b5eea] to-[#9ad5ff] p-5 text-white flex items-center">
 
       <div className="flex-1 text-left">
         <div className="text-xs font-medium opacity-90 mb-2">
