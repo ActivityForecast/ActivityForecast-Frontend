@@ -38,7 +38,7 @@ export default function Notification() {
               </button>
             </div>
 
-            {/* 임시 목록 후에 map으로 실제 데이터 나열하기*/}
+            {/* 추가: 임시 목록 후에 map으로 실제 데이터 나열하기*/}
             <ul className="space-y-3">
               <li className="text-sm flex flex-col gap-2">
                 활동하조 크루에 가입되었습니다.
@@ -47,6 +47,11 @@ export default function Notification() {
               <hr />
               <li className="text-sm flex flex-col gap-2">
                 농구하조 크루에서 10월 20일 일정이 생성되었습니다.
+                <span className="text-gray-400">1시간 전</span>
+              </li>
+              <hr />
+              <li className="text-sm flex flex-col gap-2">
+                원래 로그인해야 보이는데 임시로 해뒀어요
                 <span className="text-gray-400">1시간 전</span>
               </li>
             </ul>
