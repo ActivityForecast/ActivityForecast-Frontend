@@ -34,7 +34,8 @@ export default function HomePage() {
 
               <Button
                 onClick={handleLoginClick}
-                className="py-1 w-32 mt-6"
+                className="py-2 mt-6"
+                size='w-32'
               >
                 로그인하기
               </Button>
