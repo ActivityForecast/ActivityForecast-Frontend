@@ -9,3 +9,4 @@ export default function MypagePage() {
     </dev>
   );
 }
+// 추가: 마이페이지는 api 연동하면서 alert를 전부 제거할 예정
