@@ -26,10 +26,12 @@ export default function ProfileEdit() {
         <Button
           onClick={handleEditProfile}
           styleType="outlined"
-          className="flex items-center justify-center gap-2 border-[#4484ff] hover:text-[#4484ff] text-[#4484ff] w-full"
+          className="flex items-center justify-center gap-2 border-[#4484ff] w-full"
         >
           <EditPencilIcon />
-          <span className="text-center text-base">프로필 편집</span>
+          <span className="text-center text-base text-[#4484ff]">
+            프로필 편집
+          </span>
         </Button>
       </section>
     </>

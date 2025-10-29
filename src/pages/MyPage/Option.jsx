@@ -69,7 +69,7 @@ export default function Option() {
           className="w-full rounded border border-red-400 bg-white text-red-500 text-sm py-3 flex items-center justify-center gap-2 hover:bg-red-50 active:bg-red-100"
         >
           <LogoutIcon />
-          <span>로그아웃</span>
+          <span className="text-[#ef4444]">로그아웃</span>
         </Button>
       </section>
     </>
