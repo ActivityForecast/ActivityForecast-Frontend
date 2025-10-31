@@ -56,7 +56,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
     if (!isValidated) return;
     // 추가: patch 요청
     console.log('프로필 수정 요청', formData);
-    alert('저장되었습니다.');
+    alert('저장되었습니다.(mock이기에 반영은 x)');
     onSaved?.();
   };
 
