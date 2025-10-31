@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import Button from 'components/Button';
-
-import { ReactComponent as CautionIocn } from 'assets/icons/caution.svg';
+import { ReactComponent as CautionIcon } from 'assets/icons/caution.svg';
 import { ReactComponent as QuestionIcon } from 'assets/icons/question.svg';
 import { ReactComponent as HeartIcon } from 'assets/icons/heart.svg';
 import { ReactComponent as LogoutIcon } from 'assets/icons/logout.svg';
+import WithdrawModal from './WithdrawModal';
 
 export default function Option() {
+  const [openWithdraw, setOpenWithdraw] = useState(false);
+
   const handlePrefClick = () => {
     alert('선호 활동 설정 화면으로 이동 예정');
   };
@@ -15,11 +18,16 @@ export default function Option() {
   };
 
   const handleLeaveClick = () => {
-    alert('회원탈퇴 플로우 예정');
+    setOpenWithdraw(true);
   };
 
   const handleLogout = () => {
     alert('로그아웃 요청 예정');
+  };
+
+  const handleConfirmWithdraw = () => {
+    setOpenWithdraw(false);
+    alert('회원탈퇴 플로우 예정');
   };
 
   return (
@@ -56,7 +64,7 @@ export default function Option() {
           onClick={handleLeaveClick}
         >
           <div className="flex items-center gap-2">
-            <CautionIocn className="w-6 h-6" />
+            <CautionIcon className="w-6 h-6" />
             <span>회원탈퇴</span>
           </div>
           <span className="text-gray-400">{'>'}</span>
@@ -72,6 +80,12 @@ export default function Option() {
           <span className="text-[#ef4444]">로그아웃</span>
         </Button>
       </section>
+
+      <WithdrawModal
+        open={openWithdraw}
+        onClose={() => setOpenWithdraw(false)}
+        onConfirm={handleConfirmWithdraw}
+      />
     </>
   );
 }
