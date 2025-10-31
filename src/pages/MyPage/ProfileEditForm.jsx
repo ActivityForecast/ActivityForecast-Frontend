@@ -127,7 +127,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
           <Button
             type="button"
             styleType="outlined"
-            className="w-1/2"
+            className="w-1/2 flex items-center justify-center"
             onClick={onCancel}
           >
             취소
@@ -135,7 +135,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
           <Button
             type="submit"
             styleType="solid"
-            className="w-1/2"
+            className="w-1/2 flex items-center justify-center"
             disabled={!isValidated}
           >
             저장
