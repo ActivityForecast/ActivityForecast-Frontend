@@ -1,14 +1,14 @@
+import { useState } from 'react';
 import { user } from 'mocks/user';
 import { ReactComponent as EditPencilIcon } from 'assets/icons/pencil.svg';
 import Button from 'components/Button';
+import ProfileEditForm from './ProfileEditForm';
 
 export default function ProfileEdit() {
-  const handleEditProfile = () => {
-    alert('프로필 편집 화면으로 이동 예정');
-  };
+  const [isEditing, setIsEditing] = useState(false);
 
-  return (
-    <>
+  if (!isEditing) {
+    return (
       <section className="w-full max-w-[840px] rounded-md border border-gray-200 bg-white p-6 shadow-sm mb-8">
         <div className="mb-4">
           <div className="text-xl font-semibold text-gray-900">
@@ -24,7 +24,7 @@ export default function ProfileEdit() {
         </div>
 
         <Button
-          onClick={handleEditProfile}
+          onClick={() => setIsEditing(true)}
           styleType="outlined"
           className="flex items-center justify-center gap-2 border-[#4484ff] w-full"
         >
@@ -34,6 +34,14 @@ export default function ProfileEdit() {
           </span>
         </Button>
       </section>
-    </>
+    );
+  }
+
+  return (
+    <ProfileEditForm
+      defaultUser={user}
+      onCancel={() => setIsEditing(false)}
+      onSaved={() => setIsEditing(false)}
+    />
   );
 }

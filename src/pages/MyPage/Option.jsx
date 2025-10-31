@@ -1,5 +1,4 @@
 import Button from 'components/Button';
-
 import { ReactComponent as CautionIocn } from 'assets/icons/caution.svg';
 import { ReactComponent as QuestionIcon } from 'assets/icons/question.svg';
 import { ReactComponent as HeartIcon } from 'assets/icons/heart.svg';
