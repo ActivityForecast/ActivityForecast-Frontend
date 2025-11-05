@@ -38,7 +38,7 @@ export default function Button({
     }
 
     if (type === 'outlined-secondary') {
-      return 'bg-white border border-[#CBD5E1] text-[##64748B] hover:border-[#E2E8F0] hover:text-[#CBD5E1] active:border-[#E2E8F0] active:text-[#E2E8F0]';
+      return 'bg-white border border-[#CBD5E1] text-[#64748B] hover:border-[#E2E8F0] hover:text-[#CBD5E1] active:border-[#E2E8F0] active:text-[#E2E8F0]';
     }
 
     return type === 'outlined'

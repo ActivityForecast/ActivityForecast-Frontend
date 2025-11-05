@@ -1,9 +1,8 @@
 import Button from 'components/Button';
+
 import WeatherCard from 'components/WheatherCard';
 import { mockWeather } from 'mocks/weather';
 import { useNavigate } from 'react-router-dom';
-
-
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -16,7 +15,7 @@ export default function HomePage() {
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-8 flex items-center justify-center">
       <section className="w-full max-w-[840px] rounded-md border border-gray-200 bg-white p-8">
-       <WeatherCard weather={mockWeather} />
+        <WeatherCard weather={mockWeather} />
 
         <hr className="mx-auto my-6 w-full max-w-[480px] border-gray-300" />
 
@@ -26,7 +25,7 @@ export default function HomePage() {
             날씨에 가장 적합한 활동을 추천해드려요
           </p>
 
-           {!isLoggedIn && (
+          {!isLoggedIn && (
             <>
               <p className="mt-14 text-sm leading-relaxed text-gray-500">
                 로그인하면 현재 날씨에 맞는 맞춤 활동을 추천받을 수 있어요
@@ -35,7 +34,7 @@ export default function HomePage() {
               <Button
                 onClick={handleLoginClick}
                 className="py-2 mt-6"
-                size='w-32'
+                size="w-32"
               >
                 로그인하기
               </Button>

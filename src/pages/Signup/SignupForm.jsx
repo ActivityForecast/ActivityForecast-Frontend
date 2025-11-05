@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import InputField from 'components/InputField';
 import Button from 'components/Button';
@@ -57,74 +55,73 @@ export default function SignupForm({
 
   return (
     <>
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-10 bg-transparent font-medium"
-    >
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <label htmlFor="nickname">이름</label>
-          <InputField
-            id="nickname"
-            type="text"
-            placeholder="이름을 입력해주세요."
-            value={formData.nickname}
-            onChange={handleChange}
-            validator={validateNickname}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <label htmlFor="email">이메일</label>
-          <InputField
-            id="email"
-            type="email"
-            placeholder="이메일을 입력해주세요."
-            value={formData.email}
-            onChange={handleChange}
-            validator={validateEmail}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <label htmlFor="password">비밀번호</label>
-          <InputField
-            id="password"
-            type="password"
-            placeholder="비밀번호를 입력해주세요."
-            value={formData.password}
-            onChange={handleChange}
-            validator={validatePassword}
-            isPassword={true}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <label htmlFor="confirmPassword">비밀번호 확인</label>
-          <InputField
-            id="confirmPassword"
-            type="password"
-            placeholder="비밀번호를 다시 한 번 입력해주세요."
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            validator={validateConfirmPassword}
-            isPassword={true}
-          />
-        </div>
-      </div>
-
-{/* 추가: 운동 선택하기를 누르면 운동을 입력할 수 있게 변경 */}
-      <Button
-        type="submit"
-        styleType="solid"
-        size="py-3.5 w-full text-md"
-        state="default"
-        disabled={!isValidated}
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-10 bg-transparent font-medium"
       >
-        운동 선택하기
-      </Button>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <label htmlFor="nickname">이름</label>
+            <InputField
+              id="nickname"
+              type="text"
+              placeholder="이름을 입력해주세요."
+              value={formData.nickname}
+              onChange={handleChange}
+              validator={validateNickname}
+            />
+          </div>
 
-    </form>
+          <div className="space-y-3">
+            <label htmlFor="email">이메일</label>
+            <InputField
+              id="email"
+              type="email"
+              placeholder="이메일을 입력해주세요."
+              value={formData.email}
+              onChange={handleChange}
+              validator={validateEmail}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <label htmlFor="password">비밀번호</label>
+            <InputField
+              id="password"
+              type="password"
+              placeholder="비밀번호를 입력해주세요."
+              value={formData.password}
+              onChange={handleChange}
+              validator={validatePassword}
+              isPassword={true}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <label htmlFor="confirmPassword">비밀번호 확인</label>
+            <InputField
+              id="confirmPassword"
+              type="password"
+              placeholder="비밀번호를 다시 한 번 입력해주세요."
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              validator={validateConfirmPassword}
+              isPassword={true}
+            />
+          </div>
+        </div>
+
+        {/* 추가: 운동 선택하기를 누르면 운동을 입력할 수 있게 변경 */}
+        <Button
+          type="submit"
+          styleType="solid"
+          size="py-3.5 w-full text-md"
+          state="default"
+          disabled={!isValidated}
+        >
+          운동 선택하기
+        </Button>
+      </form>
     </>
   );
 }

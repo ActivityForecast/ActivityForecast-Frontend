@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import InputField from 'components/InputField';
 import Button from 'components/Button';
