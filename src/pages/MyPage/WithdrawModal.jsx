@@ -9,6 +9,7 @@ export default function WithdrawModal({ open, onClose, onConfirm }) {
       title="정말 탈퇴하시겠습니까?"
       isCloseOutsideClick={false}
       hasCloseButton={false}
+      style={{ '--modal-w-sm': '384px' }}
     >
       <p className="mt-2 text-sm text-center text-gray-600">
         탈퇴 후에는 활동 기록을 복구할 수 없습니다.

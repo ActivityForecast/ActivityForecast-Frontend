@@ -14,6 +14,8 @@ export default function Modal({
   position = 'center', // 'center' | 'top'
   children,
   onClose,
+  style,
+  containerStyle,
 }) {
   if (!isOpen) return null;
   const handleClick = () => onClose?.();
@@ -23,8 +25,16 @@ export default function Modal({
   };
 
   return (
-    <div className={styles.modal} open={isOpen} onClick={handleBackdropClick}>
-      <div className={cn(styles.container, position === 'top' && styles.top)}>
+    <div
+      className={styles.modal}
+      open={isOpen}
+      onClick={handleBackdropClick}
+      style={style}
+    >
+      <div
+        className={cn(styles.container, position === 'top' && styles.top)}
+        style={containerStyle}
+      >
         {title && <h5 className={styles.title}>{title}</h5>}
         {children}
         {hasCloseButton && (
