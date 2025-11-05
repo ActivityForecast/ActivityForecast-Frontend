@@ -11,6 +11,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hide horizontal scrollbar for timeline */
+.timeline-scroll {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.timeline-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Reusable: hide scrollbars (both axes) */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* (reverted) calendar vector styles removed */
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

@@ -26,6 +26,7 @@ export default function LocationSelector() {
         title="위치 변경"
         isCloseOutsideClick={false}
         position="center"
+        style={{ '--modal-w-sm': '384px' }}
       >
         <input
           type="text"
