@@ -189,6 +189,7 @@ export default function CrewListItem({
         isOpen={openCreate}
         onClose={() => setOpenCreate(false)}
         title="새 일정 만들기"
+        style={{ '--modal-max-h-sm': 'calc(100dvh - 80px)' }}
       >
         <div className="flex flex-col gap-4 mt-2">
           {/* 활동 */}

@@ -23,6 +23,12 @@ function Gnb() {
           마이페이지
         </span>
       );
+    if (location.pathname.startsWith('/crew'))
+      return (
+        <span className="text-base sm:text-lg font-semibold select-none">
+          크루페이지
+        </span>
+      );
     return null;
   };
 
