@@ -26,6 +26,7 @@
   .modal .container {
     width: var(--modal-w-sm, 960px);
     min-height: var(--modal-min-h, auto);
+    max-height: var(--modal-max-h-sm, none);
   }
 }
 .modal .container.top {
