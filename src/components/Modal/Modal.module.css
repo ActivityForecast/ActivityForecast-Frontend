@@ -18,7 +18,15 @@
 }
 
 .modal .container {
-  @apply fixed inset-0 m-auto mb-0 h-fit max-h-[calc(100%-24px)] w-[384px] max-w-full overflow-y-auto rounded-xl rounded-b-none bg-white px-[52px] pb-8 pt-12 text-base font-medium text-gray-700 sm:mb-auto sm:max-h-none sm:rounded-b-xl;
+  @apply fixed inset-0 m-auto mb-0 h-fit max-h-[calc(100%-24px)] w-[384px] sm:w-[960px] max-w-full overflow-y-auto rounded-xl rounded-b-none bg-white px-[52px] pb-8 pt-12 text-base font-medium text-gray-700 sm:mb-auto sm:max-h-none sm:rounded-b-xl;
+  /* Allow per-modal overrides via CSS variables */
+  width: var(--modal-w, 384px);
+}
+@media (min-width: 640px) {
+  .modal .container {
+    width: var(--modal-w-sm, 960px);
+    min-height: var(--modal-min-h, auto);
+  }
 }
 .modal .container.top {
   @apply sm:relative;
