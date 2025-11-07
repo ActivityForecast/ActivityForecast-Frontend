@@ -7,6 +7,7 @@ import {
   validatePassword,
   validateConfirmPassword,
 } from 'utils/formValidators';
+import ActivitySelectModal from 'components/ActivitySelectModal';
 
 export default function SignupForm({
   onSubmit,
@@ -16,9 +17,11 @@ export default function SignupForm({
     password: '',
     confirmPassword: '',
   },
+  activities = [],
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isValidated, setIsValidated] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
 
   const validateForm = useCallback(() => {
     const newErrors = {
@@ -26,9 +29,11 @@ export default function SignupForm({
       email: validateEmail(formData.email.trim()) || '',
       password: validatePassword(formData.password.trim()) || '',
       confirmPassword:
-        validateConfirmPassword(formData.confirmPassword.trim()) || '',
+        validateConfirmPassword(
+          formData.confirmPassword.trim(),
+          formData.password.trim()
+        ) || '',
     };
-
     const hasError = Object.values(newErrors).some((msg) => msg);
     setIsValidated(!hasError);
   }, [formData]);
@@ -42,23 +47,25 @@ export default function SignupForm({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleOpenActivityModal = (e) => {
     e.preventDefault();
     if (!isValidated) return;
+    setIsActivityModalOpen(true);
+  };
 
+  const handleConfirmActivities = (payload) => {
+    setIsActivityModalOpen(false);
     onSubmit?.({
       nickname: formData.nickname,
       email: formData.email,
       password: formData.password,
+      activities: payload,
     });
   };
 
   return (
     <>
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-10 bg-transparent font-medium"
-      >
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-10 bg-transparent font-medium">
         <div className="space-y-6">
           <div className="space-y-3">
             <label htmlFor="nickname">이름</label>
@@ -105,23 +112,30 @@ export default function SignupForm({
               placeholder="비밀번호를 다시 한 번 입력해주세요."
               value={formData.confirmPassword}
               onChange={handleChange}
-              validator={validateConfirmPassword}
+              validator={(v) => validateConfirmPassword(v, formData.password)}
               isPassword={true}
             />
           </div>
         </div>
 
-        {/* 추가: 운동 선택하기를 누르면 운동을 입력할 수 있게 변경 */}
         <Button
-          type="submit"
+          type="button"
           styleType="solid"
           size="py-3.5 w-full text-md"
           state="default"
           disabled={!isValidated}
+          onClick={handleOpenActivityModal}
         >
           운동 선택하기
         </Button>
       </form>
+
+      <ActivitySelectModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+        onConfirm={handleConfirmActivities}
+        activities={activities}
+      />
     </>
   );
 }
