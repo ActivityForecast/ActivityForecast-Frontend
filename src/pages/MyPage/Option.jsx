@@ -5,16 +5,27 @@ import { ReactComponent as QuestionIcon } from 'assets/icons/question.svg';
 import { ReactComponent as HeartIcon } from 'assets/icons/heart.svg';
 import { ReactComponent as LogoutIcon } from 'assets/icons/logout.svg';
 import WithdrawModal from './WithdrawModal';
+import ActivitySelectModal from 'components/ActivitySelectModal';
+import activities from 'constants/activities';
+import HelpModal from './HelpModal';
 
 export default function Option() {
   const [openWithdraw, setOpenWithdraw] = useState(false);
+  const [openPrefModal, setOpenPrefModal] = useState(false);
+  const [openHelp, setOpenHelp] = useState(false);
+  const [prefSelected, setPrefSelected] = useState({
+    유산소: [],
+    구기스포츠: [],
+    익스트림스포츠: [],
+    피트니스: [],
+  });
 
   const handlePrefClick = () => {
-    alert('선호 활동 설정 화면으로 이동 예정');
+    setOpenPrefModal(true);
   };
 
   const handleHelpClick = () => {
-    alert('도움말 화면으로 이동 예정');
+    setOpenHelp(true);
   };
 
   const handleLeaveClick = () => {
@@ -28,6 +39,12 @@ export default function Option() {
   const handleConfirmWithdraw = () => {
     setOpenWithdraw(false);
     alert('회원탈퇴 플로우 예정');
+  };
+
+  const handleConfirmPref = (payload) => {
+    setPrefSelected(payload); // 추가: API에서 기존 값을 가져오거나 로컬스토리지에 저장해서 연동하는 방식 검토
+    setOpenPrefModal(false);
+    // 추가: API 호출로 선호 저장
   };
 
   return (
@@ -86,6 +103,16 @@ export default function Option() {
         onClose={() => setOpenWithdraw(false)}
         onConfirm={handleConfirmWithdraw}
       />
+
+      <HelpModal open={openHelp} onClose={() => setOpenHelp(false)} />
+        
+      <ActivitySelectModal
+       isOpen={openPrefModal}
+       onClose={() => setOpenPrefModal(false)}
+       onConfirm={handleConfirmPref}
+       activities={activities}
+      initialSelected={prefSelected}
+    />
     </>
   );
 }

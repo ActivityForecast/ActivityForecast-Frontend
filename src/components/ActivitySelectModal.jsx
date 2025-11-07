@@ -1,19 +1,34 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Modal, { ModalFooter } from 'components/Modal/Modal';
 import Button from 'components/Button';
+
+const CATEGORIES = ['유산소', '구기스포츠', '익스트림스포츠', '피트니스'];
+const EMPTY_SELECTED = { 유산소: [], 구기스포츠: [], 익스트림스포츠: [], 피트니스: [] };
 
 export default function ActivitySelectModal({
   isOpen,
   onClose,
   onConfirm,
   activities = [],
+  initialSelected = EMPTY_SELECTED,
 }) {
-  const categories = ['유산소', '구기스포츠', '익스트림스포츠', '피트니스'];
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
+  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
 
   const [selected, setSelected] = useState(() =>
-    Object.fromEntries(categories.map((c) => [c, new Set()]))
+    Object.fromEntries(CATEGORIES.map((c) => [c, new Set()]))
   );
+
+  useEffect(() => {
+   if (!isOpen) return;
+   const next = Object.fromEntries(
+     CATEGORIES.map((c) => [
+       c,
+      new Set((initialSelected?.[c] || []).map((x) => (typeof x === 'string' ? x : x.id))),
+     ])
+   );
+   setSelected(next);
+   setActiveCategory(CATEGORIES[0]);
+  }, [isOpen, initialSelected]);
 
   const currentList = useMemo(
     () => activities.filter((a) => a.category === activeCategory),
@@ -41,17 +56,17 @@ export default function ActivitySelectModal({
   const clearCategory = (cat) =>
     setSelected((prev) => ({ ...prev, [cat]: new Set() }));
 
-  const hasAnySelected = categories.some((c) => (selected[c]?.size ?? 0) > 0);
+  const hasAnySelected = CATEGORIES.some((c) => (selected[c]?.size ?? 0) > 0);
 
   const handleConfirm = () => {
     if (!hasAnySelected) return;
-    const payload = categories.reduce((acc, c) => {
+    const payload = CATEGORIES.reduce((acc, c) => {
       acc[c] = activities
         .filter((a) => a.category === c && selected[c].has(a.id))
         .map((a) => ({ id: a.id, name: a.name }));
       return acc;
     }, {});
-    onConfirm?.(payload);
+    onConfirm?.(payload); 
   };
 
   return (
@@ -63,7 +78,7 @@ export default function ActivitySelectModal({
       isCloseOutsideClick={true}
     >
       <div className="flex gap-2 mt-6 mb-4">
-        {categories.map((cat) => (
+        {CATEGORIES.map((cat) => (
           <button
             key={cat}
             type="button"
@@ -123,7 +138,7 @@ export default function ActivitySelectModal({
       </div>
 
       <div className="mt-4 space-y-2">
-        {categories.map((cat) => (
+        {CATEGORIES.map((cat) => (
           <div key={cat} className="flex items-center justify-between">
             <div className="flex flex-wrap gap-2">
               {[...selected[cat]].map((id) => {
