@@ -7,11 +7,12 @@ import { ReactComponent as LogoutIcon } from 'assets/icons/logout.svg';
 import WithdrawModal from './WithdrawModal';
 import ActivitySelectModal from 'components/ActivitySelectModal';
 import activities from 'constants/activities';
+import HelpModal from './HelpModal';
 
 export default function Option() {
   const [openWithdraw, setOpenWithdraw] = useState(false);
   const [openPrefModal, setOpenPrefModal] = useState(false);
-
+  const [openHelp, setOpenHelp] = useState(false);
   const [prefSelected, setPrefSelected] = useState({
     유산소: [],
     구기스포츠: [],
@@ -24,7 +25,7 @@ export default function Option() {
   };
 
   const handleHelpClick = () => {
-    alert('도움말 화면으로 이동 예정');
+    setOpenHelp(true);
   };
 
   const handleLeaveClick = () => {
@@ -103,6 +104,8 @@ export default function Option() {
         onConfirm={handleConfirmWithdraw}
       />
 
+      <HelpModal open={openHelp} onClose={() => setOpenHelp(false)} />
+        
       <ActivitySelectModal
        isOpen={openPrefModal}
        onClose={() => setOpenPrefModal(false)}
