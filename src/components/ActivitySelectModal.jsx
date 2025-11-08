@@ -77,7 +77,7 @@ export default function ActivitySelectModal({
       position="center"
       isCloseOutsideClick={true}
     >
-      <div className="flex gap-2 mt-6 mb-4">
+      <div className="flex flex-wrap gap-2 mt-6 mb-4">
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
