@@ -60,13 +60,8 @@ export default function ActivitySelectModal({
 
   const handleConfirm = () => {
     if (!hasAnySelected) return;
-    const payload = CATEGORIES.reduce((acc, c) => {
-      acc[c] = activities
-        .filter((a) => a.category === c && selected[c].has(a.id))
-        .map((a) => ({ id: a.id, name: a.name }));
-      return acc;
-    }, {});
-    onConfirm?.(payload); 
+    const ids = CATEGORIES.flatMap((c) => [...selected[c]]);
+    onConfirm?.(ids);
   };
 
   return (
