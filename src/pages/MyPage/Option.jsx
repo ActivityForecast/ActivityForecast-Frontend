@@ -8,6 +8,8 @@ import WithdrawModal from './WithdrawModal';
 import ActivitySelectModal from 'components/ActivitySelectModal';
 import activities from 'constants/activities';
 import HelpModal from './HelpModal';
+import { useAuthStore } from 'stores/auth';
+import { useNavigate } from 'react-router-dom';
 
 export default function Option() {
   const [openWithdraw, setOpenWithdraw] = useState(false);
@@ -19,6 +21,9 @@ export default function Option() {
     익스트림스포츠: [],
     피트니스: [],
   });
+
+   const { logout } = useAuthStore();
+  const navigate = useNavigate();
 
   const handlePrefClick = () => {
     setOpenPrefModal(true);
@@ -32,8 +37,12 @@ export default function Option() {
     setOpenWithdraw(true);
   };
 
-  const handleLogout = () => {
-    alert('로그아웃 요청 예정');
+   const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate('/', { replace: true });
+    }
   };
 
   const handleConfirmWithdraw = () => {
