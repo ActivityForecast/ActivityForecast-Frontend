@@ -19,7 +19,7 @@ function App() {
         <Route path="/crew" element={<CrewPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/mypage" element={<MyPage />} />
-        <Route path="/oauth2/redirect" element={<OAuthRedirect/>} />
+        <Route path="/auth/oauth2/redirect" element={<OAuthRedirect />} />
       </Routes>
     </div>
   );
