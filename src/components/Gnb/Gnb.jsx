@@ -40,8 +40,8 @@ function Gnb() {
       <div className="flex items-center">{renderCenterSlot()}</div>
 
       <div className="flex items-center gap-1 sm:gap-2">
-        {user ? <ProfileDropdown /> : <LoginMenu />}
-        <Notification />
+        {user ? <><ProfileDropdown /> <Notification /></> : <LoginMenu />}
+        
       </div>
     </header>
   );
