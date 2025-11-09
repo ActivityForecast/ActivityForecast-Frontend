@@ -1,25 +1,24 @@
-import { useState } from 'react';
-import { user } from 'mocks/user';
+import {  useState } from 'react';
 import { ReactComponent as EditPencilIcon } from 'assets/icons/pencil.svg';
 import Button from 'components/Button';
 import ProfileEditForm from './ProfileEditForm';
+import { useAuthStore } from 'stores/auth';
+
 
 export default function ProfileEdit() {
   const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuthStore();
 
   if (!isEditing) {
     return (
       <section className="w-full max-w-[840px] rounded-md border border-gray-200 bg-white p-6 shadow-sm mb-8">
         <div className="mb-4">
           <div className="text-xl font-semibold text-gray-900">
-            {user.nickname}
+            {user.name || user.nickname}
           </div>
-          <div className="mt-2 text-base text-gray-600">
+          <div className="mt-2 text-lg text-gray-600">
             <div>{user.email}</div>
-            <div>비밀번호: {user.passwordMasked}</div>
-          </div>
-          <div className="mt-2 text-sm text-gray-400">
-            가입일: {user.joinedAt}
+            <div className='text-base'>비밀번호: {'•'.repeat(8)}</div>
           </div>
         </div>
 
