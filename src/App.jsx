@@ -6,6 +6,7 @@ import SignupPage from 'pages/Signup/SignupPage';
 import CrewPage from 'pages/Crew/CrewPage';
 import { Route, Routes } from 'react-router-dom';
 import HistoryPage from 'pages/History/HistoryPage';
+import OAuthRedirect from 'pages/OAuthRedirect';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/crew" element={<CrewPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/oauth2/redirect" element={<OAuthRedirect/>} />
       </Routes>
     </div>
   );

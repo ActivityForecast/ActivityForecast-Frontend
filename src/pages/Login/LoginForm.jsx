@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import InputField from 'components/InputField';
 import Button from 'components/Button';
 import { validateEmail, validatePassword } from 'utils/formValidators';
+import { ReactComponent as Kakao } from 'assets/images/kakaotalk.svg';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoginForm({
@@ -14,6 +15,7 @@ export default function LoginForm({
   const [formData, setFormData] = useState(initialFormData);
   const [isValidated, setIsValidated] = useState(false);
   const navigate = useNavigate();
+  const API_ORIGIN = process.env.REACT_APP_API_ORIGIN;
 
   const validateForm = useCallback(() => {
     const newErrors = {
@@ -40,6 +42,10 @@ export default function LoginForm({
   const handleSignupClick = () => {
     navigate('/signup');
   };
+
+  const handleKakaoLogin = () => {
+  window.location.href = `${API_ORIGIN}/auth/oauth2/authorization/kakao`;
+};
 
   return (
     <>
@@ -95,8 +101,16 @@ export default function LoginForm({
         >
           회원가입
         </Button>
-
-        {/* 추가: 후에 간편로그인도 둘 예정 */}
+      <div className='w-full flex justify-end'>
+        <button
+        type="button"
+        onClick={handleKakaoLogin}
+        className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-yellow-100 "
+        >
+        <Kakao />
+        <span className="text-sm sm:text-base text-gray-500">카카오로 계속하기</span>
+        </button>
+      </div>
       </form>
     </>
   );

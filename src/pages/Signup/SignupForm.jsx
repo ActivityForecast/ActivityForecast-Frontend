@@ -56,10 +56,10 @@ export default function SignupForm({
   const handleConfirmActivities = (payload) => {
     setIsActivityModalOpen(false);
     onSubmit?.({
-      nickname: formData.nickname,
+      name: formData.nickname,
       email: formData.email,
       password: formData.password,
-      activities: payload,
+      preferredActivityIds: [0],
     });
   };
 
@@ -130,6 +130,7 @@ export default function SignupForm({
         </Button>
       </form>
 
+{/*추가: 현재 활동선택 [0]기본값만 전송 후에 변경 예정 */}
       <ActivitySelectModal
         isOpen={isActivityModalOpen}
         onClose={() => setIsActivityModalOpen(false)}
