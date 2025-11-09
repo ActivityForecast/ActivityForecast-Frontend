@@ -1,12 +1,13 @@
 import { useAuthStore } from 'stores/auth';
 import LoginForm from './LoginForm';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
-    const { login, isLoading } = useAuthStore();
+    const { user, login, isLoading } = useAuthStore();
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
  const handleLogin = async ({ email, password }) => {
     setError('');
     try {
@@ -17,6 +18,18 @@ export default function LoginPage() {
       setError(msg);
     }
   };
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      const timer = setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, user, navigate]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center">로그인 확인 중…</div>;}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
