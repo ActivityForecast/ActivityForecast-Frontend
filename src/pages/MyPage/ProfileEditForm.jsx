@@ -8,9 +8,11 @@ import {
 } from 'utils/formValidators';
 
 export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
+  const safeNickname = defaultUser.nickname ?? defaultUser.name ?? '';
+
   const [formData, setFormData] = useState({
     email: defaultUser.email,
-    nickname: defaultUser.nickname,
+    nickname: safeNickname,
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -55,8 +57,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
     e.preventDefault();
     if (!isValidated) return;
     // 추가: patch 요청
-    console.log('프로필 수정 요청', formData);
-    alert('저장되었습니다.(mock이기에 반영은 x)');
+    alert('현재 패치 요청 적용 x');
     onSaved?.();
   };
 
@@ -123,11 +124,11 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex w-full gap-3 pt-2">
           <Button
             type="button"
             styleType="outlined"
-            className="w-1/2 flex items-center justify-center"
+            className="w-full flex items-center justify-center"
             onClick={onCancel}
           >
             취소
@@ -135,7 +136,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
           <Button
             type="submit"
             styleType="solid"
-            className="w-1/2 flex items-center justify-center"
+            className="w-full flex items-center justify-center"
             disabled={!isValidated}
           >
             저장
