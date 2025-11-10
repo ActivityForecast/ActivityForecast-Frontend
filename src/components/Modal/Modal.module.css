@@ -1,0 +1,47 @@
+/* Modal.module.css - 안전 치환본 */
+@keyframes open {
+  from {
+    transform: translate(0, -20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+.modal {
+  @apply pointer-events-auto fixed inset-0 z-50 h-screen max-h-dvh w-full overflow-y-auto bg-black/50 backdrop-blur-sm sm:py-8;
+}
+.modal[open] {
+  animation: open 0.3s forwards;
+}
+
+.modal .container {
+  @apply fixed inset-0 m-auto mb-0 h-fit max-h-[calc(100%-24px)] w-[384px] sm:w-[960px] max-w-full overflow-y-auto rounded-xl rounded-b-none bg-white px-[52px] pb-8 pt-12 text-base font-medium text-gray-700 sm:mb-auto sm:max-h-none sm:rounded-b-xl;
+  /* Allow per-modal overrides via CSS variables */
+  width: var(--modal-w, 384px);
+}
+@media (min-width: 640px) {
+  .modal .container {
+    width: var(--modal-w-sm, 960px);
+    min-height: var(--modal-min-h, auto);
+    max-height: var(--modal-max-h-sm, none);
+  }
+}
+.modal .container.top {
+  @apply sm:relative;
+}
+
+.modal .title {
+  @apply mb-2 text-center text-2xl font-semibold;
+}
+.modal .btnClose {
+  @apply absolute right-4 top-4 p-2 rounded hover:bg-gray-100;
+}
+.modal .footer {
+  @apply mt-6 flex gap-2;
+}
+.modal .footer > * {
+  @apply flex-1;
+}
