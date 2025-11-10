@@ -4,8 +4,10 @@ import CalendarBox from "mocks/Calender";
 import CrewListItem from "mocks/CrewListItem";
 import Modal, { ModalFooter } from "components/Modal/Modal";
 import InputField from "components/InputField";
+import { useAuthStore } from 'stores/auth';
 
 export default function CrewPage() {
+  const { user } = useAuthStore();
 
   //  파스텔톤 색상 팔레트
   const colorPalette = [
@@ -128,20 +130,31 @@ export default function CrewPage() {
         </h2>
 
         <div className="w-full mt-4 px-6">
-          <div className="space-y-3">
-            {crews.map((c) => (
-              <CrewListItem
-                key={c.id}
-                id={c.id}
-                name={c.name}
-                current={c.current}
-                max={c.max}
-                color={c.color}
-                events={crewEvents[c.id] || []}
-                onLeave={handleLeaveRequest}   //  탈퇴 요청 핸들러
-              />
-            ))}
-          </div>
+          {!user ? (
+            <div className="rounded-2xl border border-gray-200 bg-white py-14 px-6 text-center text-gray-400">
+              <div className="text-base sm:text-lg">
+                사용자가 참여하고 있는 크루가 없습니다
+              </div>
+              <div className="mt-2 text-xs sm:text-sm text-gray-400">
+                크루를 생성하여 다른 사람과 함께 운동해요
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {crews.map((c) => (
+                <CrewListItem
+                  key={c.id}
+                  id={c.id}
+                  name={c.name}
+                  current={c.current}
+                  max={c.max}
+                  color={c.color}
+                  events={crewEvents[c.id] || []}
+                  onLeave={handleLeaveRequest}   //  탈퇴 요청 핸들러
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 캘린더 */}
