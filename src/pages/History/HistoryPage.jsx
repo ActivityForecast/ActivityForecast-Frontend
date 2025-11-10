@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Modal, { ModalFooter } from 'components/Modal/Modal';
 import ActivityWidget from 'mocks/ActivityWidget';
-import { useNavigate } from 'react-router-dom';
-
 
 function getMonthFromKoreanDate(d, fallbackMonth) {
   const m = /\s(\d{1,2})월/.exec(d);
