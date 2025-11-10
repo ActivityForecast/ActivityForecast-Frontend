@@ -11,7 +11,7 @@ export default function DropdownMenu({
   return (
     <div
       className={
-        'absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white p-1 shadow-lg ' +
+        'absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white p-1 shadow-lg z-50 ' +
         className
       }
     >

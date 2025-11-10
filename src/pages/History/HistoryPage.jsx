@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Modal, { ModalFooter } from 'components/Modal/Modal';
 import ActivityWidget from 'mocks/ActivityWidget';
+import { useNavigate } from 'react-router-dom';
+
 
 function getMonthFromKoreanDate(d, fallbackMonth) {
   const m = /\s(\d{1,2})월/.exec(d);
@@ -9,6 +11,8 @@ function getMonthFromKoreanDate(d, fallbackMonth) {
 
 export default function HistoryPage() {
   // 임시 더미 데이터 (해당 월 활동 요약)
+  
+  const navigate = useNavigate();
   const segments = useMemo(
     () => [
       { label: '러닝', count: 2 },

@@ -31,7 +31,7 @@ function Gnb() {
   };
 
   return (
-    <header className="flex items-center justify-between h-14 px-2 sm:px-6 border-b bg-white">
+    <header className="flex items-center justify-between h-14 px-2 sm:px-6 border-b bg-white z-50">
       <div className="flex items-center sm:gap-2">
         <Menu />
         <Home />
