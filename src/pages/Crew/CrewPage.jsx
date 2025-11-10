@@ -7,10 +7,9 @@ import InputField from "components/InputField";
 import { useAuthStore } from 'stores/auth';
 
 export default function CrewPage() {
+  const { user } = useAuthStore();
 
   //  파스텔톤 색상 팔레트
-  
-  const { user } = useAuthStore();
   const colorPalette = [
     "#FC8385",
     "#FCA883",

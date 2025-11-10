@@ -9,8 +9,6 @@ function getMonthFromKoreanDate(d, fallbackMonth) {
 
 export default function HistoryPage() {
   // 임시 더미 데이터 (해당 월 활동 요약)
-  
-  
   const segments = useMemo(
     () => [
       { label: '러닝', count: 2 },
