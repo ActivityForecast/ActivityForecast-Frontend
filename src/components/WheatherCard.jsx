@@ -1,3 +1,4 @@
+import { ReactComponent as SunIcon } from 'assets/images/sun.svg';
 
 export default function WeatherCard({ weather }) {
   return (
@@ -22,12 +23,9 @@ export default function WeatherCard({ weather }) {
         </div>
       </div>
 
-   {/* 추가: 여기도 날씨에 따라서 이미지를 변경해야 하는데 후에 어떻게 구현 할 지 고민해보겠습니다. */}
+   {/* 추가: 여기도 날씨에 따라서 이미지를 변경해야 하는데 날씨 api 연동 후에 어떻게 구현 할 지 고민해보겠습니다. */}
       <div className="flex items-center justify-end flex-none">
-        <div className="h-12 w-12">
-          해그림
-
-        </div>
+        <SunIcon className='w-24 h-24'/>
       </div>
     </div>
   );
