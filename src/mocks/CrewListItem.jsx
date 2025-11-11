@@ -13,6 +13,8 @@ export default function CrewListItem({
   color = '#FC8385',
   events = [],
   onLeave,
+  onShare,
+  members = [],
 }) {
   const pct = Math.max(0, Math.min(100, (current / max) * 100));
   const [hovering, setHovering] = useState(false);
@@ -107,13 +109,17 @@ export default function CrewListItem({
           <section>
             <h4 className="text-sm font-semibold text-gray-600 mb-2">멤버</h4>
             <div className="flex items-center gap-6">
-              {[{ n: '이승민' }, { n: '박연학' }, { n: '김유성' }].map(
-                (m, i) => (
+              {(members || []).slice(0, 8).map((m, i) => {
+                const displayName = m?.user?.name ?? m?.name ?? `멤버${i + 1}`;
+                return (
                   <div key={i} className="text-center">
                     <div className="w-10 h-10 rounded-full bg-gray-300" />
-                    <div className="text-xs text-gray-600 mt-1">{m.n}</div>
+                    <div className="text-xs text-gray-600 mt-1">{displayName}</div>
                   </div>
-                )
+                );
+              })}
+              {(members || []).length === 0 && (
+                <div className="text-xs text-gray-400">멤버가 없습니다</div>
               )}
             </div>
           </section>
@@ -171,6 +177,7 @@ export default function CrewListItem({
           <button
             className="flex-1 rounded-full text-white py-2"
             style={{ backgroundColor: color }}
+            onClick={() => onShare?.(id)}
           >
             공유
           </button>

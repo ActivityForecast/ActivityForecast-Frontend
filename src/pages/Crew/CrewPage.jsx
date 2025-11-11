@@ -5,11 +5,13 @@ import CrewListItem from "mocks/CrewListItem";
 import Modal, { ModalFooter } from "components/Modal/Modal";
 import InputField from "components/InputField";
 import { useAuthStore } from 'stores/auth';
+
 import { useCrewStore } from 'stores/crew';
 
 export default function CrewPage() {
   const { user } = useAuthStore();
-  const { myCrews, loadMyCrews, addCrew } = useCrewStore();
+  const { myCrews, loadMyCrews, addCrew, removeMember } = useCrewStore();
+
 
   // 서버에서 크루 목록 로드
   useEffect(() => {
@@ -25,7 +27,28 @@ export default function CrewPage() {
     current: c.activeMemberCount ?? (Array.isArray(c.members) ? c.members.length : 0) ?? 1,
     max: c.maxCapacity ?? c.max ?? 10,
     color: c.colorCode ?? c.color ?? "#83C8FC",
+    inviteCode: c.inviteCode,
+    members: Array.isArray(c.members) ? c.members : [],
   }));
+
+  // 파스텔톤 색상 팔레트
+  const colorPalette = [
+    "#FC8385",
+    "#FCA883",
+    "#FCD083",
+    "#A4E682",
+    "#7FECC8",
+    "#83C8FC",
+    "#A6A4FC",
+    "#E6A4FC",
+    "#FC83C6",
+    "#FCE683",
+  ];
+
+  // 랜덤 색상 선택
+  const getRandomColor = () => {
+    return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+  };
 
   //  생성 모달
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,6 +58,21 @@ export default function CrewPage() {
   //  탈퇴 완료 모달
   const [leaveTargetId, setLeaveTargetId] = useState(null);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+
+  //  공유 모달
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+
+  const handleShare = async (crew) => {
+    const code = crew.inviteCode;
+    if (!code) return;
+    const url = `${window.location.origin}/crew/join?code=${encodeURIComponent(code)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (_) {}
+    setShareUrl(url);
+    setShareOpen(true);
+  };
 
   // 예시 크루 일정 데이터
   const crewEvents = {
@@ -52,9 +90,12 @@ export default function CrewPage() {
   const handleCreateCrew = async () => {
     if (!crewName.trim() || !crewMax.trim()) return;
     try {
+      const cap = Math.max(1, Math.min(50, parseInt(crewMax, 10) || 1));
+      const randomColor = getRandomColor();
       await addCrew({
         crewName: crewName,
-        maxCapacity: parseInt(crewMax, 10),
+        maxCapacity: cap,
+        colorCode: randomColor,
       });
       setCrewName("");
       setCrewMax("");
@@ -71,14 +112,27 @@ export default function CrewPage() {
   };
 
   //  완료 클릭 시 실제 삭제
-  const handleLeaveConfirm = () => {
+  const handleLeaveConfirm = async () => {
     if (leaveTargetId == null) return;
-    // TODO: API 호출로 크루 탈퇴 처리
-    setLeaveTargetId(null);
-    setLeaveModalOpen(false);
-    // 목록 새로고침
-    if (user) {
-      loadMyCrews();
+    const targetUserId = user?.userId ?? user?.id;
+    if (!targetUserId) {
+      // 사용자 ID를 확인할 수 없으면 일단 모달만 닫고 종료
+      setLeaveTargetId(null);
+      setLeaveModalOpen(false);
+      return;
+    }
+
+    try {
+      const success = await removeMember(leaveTargetId, targetUserId);
+      if (success) {
+        // 탈퇴 성공 시 목록 새로고침
+        await loadMyCrews();
+      }
+    } catch (error) {
+      console.error('크루 탈퇴 실패:', error);
+    } finally {
+      setLeaveTargetId(null);
+      setLeaveModalOpen(false);
     }
   };
 
@@ -128,6 +182,7 @@ export default function CrewPage() {
             </div>
           ) : (
             <div className="space-y-3">
+
               {safeCrews.length === 0 ? (
                 <div className="rounded-2xl border border-gray-200 bg-white py-14 px-6 text-center text-gray-400">
                   <div className="text-base sm:text-lg">
@@ -146,11 +201,14 @@ export default function CrewPage() {
                     current={c.current}
                     max={c.max}
                     color={c.color}
+                    members={c.members}
                     events={crewEvents[c.id] || []}
                     onLeave={handleLeaveRequest}
+                    onShare={() => handleShare(c)}
                   />
                 ))
               )}
+
             </div>
           )}
         </div>
@@ -186,7 +244,9 @@ export default function CrewPage() {
           <InputField
             id="crewMax"
             type="number"
-            placeholder="인원을 정해주세요"
+            placeholder="인원(최대 50)"
+            min={1}
+            max={50}
             value={crewMax}
             onChange={(e) => setCrewMax(e.target.value)}
           />
@@ -220,6 +280,30 @@ export default function CrewPage() {
         <ModalFooter>
           <button
             onClick={handleLeaveConfirm}
+            className="flex-1 rounded-xl bg-[#4FBFF2] text-white py-3"
+          >
+            완료
+          </button>
+        </ModalFooter>
+      </Modal>
+      </div>
+
+      {/* 공유 완료 모달 */}
+      <div style={{ '--modal-w-sm': '520px' }}>
+      <Modal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        hasCloseButton={false}
+        isCloseOutsideClick={true}
+        title=""
+      >
+        <div className="text-center py-6">
+          <div className="text-lg font-semibold">공유를 위한 링크가 복사되었습니다!</div>
+          <div className="mt-3 text-xs sm:text-sm text-gray-400 break-all">{shareUrl || 'http://…'}</div>
+        </div>
+        <ModalFooter>
+          <button
+            onClick={() => setShareOpen(false)}
             className="flex-1 rounded-xl bg-[#4FBFF2] text-white py-3"
           >
             완료
