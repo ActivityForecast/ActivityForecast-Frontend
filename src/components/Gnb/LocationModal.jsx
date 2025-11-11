@@ -4,6 +4,7 @@ import { externalSearchLocations, geocode, searchLocations } from 'api/location'
 import { useDebounce } from 'hooks/useDebounce';
 import { useLocationStore } from 'stores/location';
 import { looksAddressish } from 'utils/looksAddressish';
+import { useAuthStore } from 'stores/auth';
 
 const norm = (s) => (s || '').toLowerCase();
 const contains = (hay, needle) => norm(hay).includes(norm(needle));
@@ -11,6 +12,8 @@ const contains = (hay, needle) => norm(hay).includes(norm(needle));
 export default function LocationModal({ isOpen = true, onClose, onConfirm }) {
   const [keyword, setKeyword] = useState('');
   const debounced = useDebounce(keyword, 300);
+  const { accessToken } = useAuthStore();
+  const loggedIn = !!accessToken;
 
   const [list, setList] = useState([]);
   const [picked, setPicked] = useState(null);
@@ -186,62 +189,69 @@ export default function LocationModal({ isOpen = true, onClose, onConfirm }) {
       style={{ '--modal-w-sm': '384px' }}
     >
       <div className="mt-3">
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="원하시는 위치를 검색하세요"
-          className="w-full rounded-lg bg-[#F3F8FD] px-4 py-3 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-400"
-        />
+        {!loggedIn ? (
+          <p className="p-4 text-sm text-gray-500 text-center">
+            로그인을 하고 위치 검색을 진행해주세요.
+          </p>
+        ) : (
+          <>
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="원하시는 위치를 검색하세요"
+              className="w-full rounded-lg bg-[#F3F8FD] px-4 py-3 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-400"
+            />
+
+            <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-gray-200">
+              {loading && <div className="p-4 text-sm text-gray-500">검색 중…</div>}
+              {!loading && error && <div className="p-4 text-sm text-red-500">{error}</div>}
+              {!loading && list.length === 0 && debounced.trim().length >= 1 && (
+                <div className="p-4 text-sm text-gray-500">검색 결과가 없습니다.</div>
+              )}
+              {!loading && list.length > 0 && (
+                <ul ref={listRef}>
+                  {list.map((item, idx) => {
+                    const active = idx === activeIndex || (picked && picked.id === item.id);
+                    return (
+                      <li
+                        key={item.id}
+                        className={`px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 ${
+                          active ? 'bg-blue-50' : ''
+                        }`}
+                        onClick={() => {
+                          setActiveIndex(idx);
+                          setPicked(item);
+                        }}
+                      >
+                        <div className="font-medium">{item.name}</div>
+                        {item.address && (
+                          <div className="text-xs text-gray-500 mt-0.5">{item.address}</div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-gray-200">
-        {loading && <div className="p-4 text-sm text-gray-500">검색 중…</div>}
-        {!loading && error && <div className="p-4 text-sm text-red-500">{error}</div>}
-        {!loading && !error && list.length === 0 && debounced.trim().length >= 2 && (
-          <div className="p-4 text-sm text-gray-500">검색 결과가 없습니다.</div>
-        )}
-        {!loading && !error && list.length > 0 && (
-          <ul ref={listRef}>
-            {list.map((item, idx) => {
-              const active = idx === activeIndex || (picked && picked.id === item.id);
-              return (
-                <li
-                  key={item.id}
-                  className={`px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 ${
-                    active ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={() => {
-                    setActiveIndex(idx);
-                    setPicked(item);
-                  }}
-                >
-                  <div className="font-medium">{item.name}</div>
-                  {item.address && (
-                    <div className="text-xs text-gray-500 mt-0.5">{item.address}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      <ModalFooter>
-        <button
-          className={`w-full rounded-xl py-3 text-white font-medium transition
-            ${
-              picked
-                ? 'bg-[#0d99ff] hover:bg-blue-500'
-                : 'bg-gray-300 cursor-not-allowed'
+      {loggedIn && (
+        <ModalFooter>
+          <button
+            className={`w-full rounded-xl py-3 text-white font-medium transition ${
+              picked ? 'bg-[#0d99ff] hover:bg-blue-500' : 'bg-gray-300 cursor-not-allowed'
             }`}
-          onClick={onConfirmAndClose}
-          disabled={!picked}
-        >
-          완료
-        </button>
-      </ModalFooter>
+            onClick={onConfirmAndClose}
+            disabled={!picked}
+          >
+            완료
+          </button>
+        </ModalFooter>
+      )}
     </Modal>
   );
 }
