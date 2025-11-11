@@ -78,8 +78,15 @@ export default function LocationModal({ isOpen = true, onClose, onConfirm }) {
           signal: controller.signal,
         });
         if (!mounted || mySeq !== reqSeqRef.current) return;
+        
+        // 외부 검색 결과도 키워드가 포함되었는지 여부를 검사할게요.
+        const filteredExternal = (external || []).filter((r) => {
+          const name = r.locationName ?? r.name ?? '';
+          const addr = r.address ?? '';
+          return contains(name, q) || contains(addr, q);
+        });
 
-        let merged = external || [];
+        let merged = filteredExternal;
 
         if (!preferExternalOnly) {
           let internal = [];
