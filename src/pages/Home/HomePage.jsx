@@ -2,27 +2,32 @@ import ActivityCard from 'components/ActivityCard';
 import Button from 'components/Button';
 import WeatherCard from 'components/WheatherCard';
 import { recommendedActivities } from 'mocks/Activities';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from 'stores/auth';
 import CalendarModal from './CalendarModal';
 import { useWeather } from 'hooks/useWeather';
 import { mapWeatherToCard } from 'utils/mapWeatherToCard';
 import { useLocationStore } from 'stores/location';
+import { DEFAULT_LOCATION } from 'constants/defaultLocation';
+
+const pad2 = (n) => String(n).padStart(2, '0');
+const toYMD = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { accessToken, isLoading } = useAuthStore();
   const isLoggedIn = !!accessToken;
-
-  // 위치/날씨
-  const { selected } = useLocationStore();
-  const { isLoading: wxLoading, error: wxError, data: todayRes } = useWeather();
+  const [pickedDate, setPickedDate] = useState(() => toYMD(new Date()));
+  const minDate = toYMD(new Date()) // 오늘
+  const maxDate = toYMD(addDays(new Date(),4)) //+4일(5일까지)
+  const { selected, setSelected } = useLocationStore();
+  const { isLoading: wxLoading, error: wxError, data: todayRes } = useWeather(pickedDate);
   const uiWeather = useMemo(() => (todayRes ? mapWeatherToCard(todayRes) : null), [todayRes]);
 
-  // 날짜 선택 모달
   const [openCalendar, setOpenCalendar] = useState(false);
-  const [pickedDate, setPickedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  
 
   const handleOpenCalendar = () => setOpenCalendar(true);
   const handleCloseCalendar = () => setOpenCalendar(false);
@@ -30,16 +35,16 @@ export default function HomePage() {
     setPickedDate(dateStr);
     setOpenCalendar(false);
   };
-
   const handleLoginClick = () => navigate('/login');
 
-
+  useEffect(() => {
+   if (!selected) setSelected(DEFAULT_LOCATION);
+  }, [selected, setSelected]);
 
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-8 flex items-center justify-center">
       <section className="w-full max-w-[840px] rounded-md border border-gray-200 bg-white p-8">
 
-        {/* 날씨 카드 영역 */}
         {!selected ? (
           <div className="mx-auto w-full max-w-[480px] h-60 rounded-md border border-gray-200 flex items-center justify-center">
             <div className="text-center">
@@ -105,6 +110,8 @@ export default function HomePage() {
           initialDate={pickedDate}
           onApply={handleApplyDate}
           onClose={handleCloseCalendar}
+          min={minDate}
+          max={maxDate}
         />
       </section>
     </main>

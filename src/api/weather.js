@@ -25,3 +25,11 @@ export async function getForecast({ lat, lon }, { signal } = {}) {
   });
   return unwrap(data);
 }
+
+export async function getAirQuality({ lat, lon }, { signal } = {}) {
+  const { data } = await api.get('/weather/air-quality', {
+    params: { lat, lon },
+    signal,
+  });
+  return (data && data.data) ? data.data : data;
+}
