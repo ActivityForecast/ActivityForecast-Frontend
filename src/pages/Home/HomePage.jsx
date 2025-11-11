@@ -80,7 +80,7 @@ export default function HomePage() {
                 ))}
               </div>
               <div className="mt-8 flex gap-4">
-                <Button onClick={() => navigate('/detail')} size='w-[240px] h-[56px]' className='text-sm sm:text-base'>
+                <Button onClick={() => navigate(`/detail?date=${pickedDate}`)} size='w-[240px] h-[56px]' className='text-sm sm:text-base'>
                   맞춤 추천 확인
                 </Button>
                 <Button onClick={handleOpenCalendar} size='w-[240px] h-[56px]' className='text-sm sm:text-base'>
