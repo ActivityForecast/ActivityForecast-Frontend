@@ -1,47 +1,42 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ReactComponent as LocationIcon } from 'assets/icons/location.svg';
 import { ReactComponent as DownArrowIcon } from 'assets/icons/downarrow.svg';
-import Modal, { ModalFooter } from 'components/Modal/Modal';
+import { useLocationStore } from 'stores/location';
+import LocationModal from './LocationModal';
+
 
 export default function LocationSelector() {
   const [open, setOpen] = useState(false);
+  const { selected, setSelected } = useLocationStore();
+  const label = useMemo(() => selected?.name || '서울시 마포구', [selected]);
 
   return (
     <>
       <div
         className="flex items-center gap-1 sm:gap-2 font-medium text-lg sm:text-xl cursor-pointer select-none"
+        onClick={() => setOpen(true)}
         role="button"
         tabIndex={0}
-        onClick={() => setOpen(true)}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOpen(true)}
       >
-        <LocationIcon />
-        서울시 마포구
+        <LocationIcon /> <span
+          className="
+            max-w-[95px] overflow-hidden text-ellipsis whitespace-nowrap
+            sm:max-w-none
+          "
+        >
+        {label}</span>
         <DownArrowIcon />
       </div>
 
-      <Modal
-        isOpen={open}
-        onClose={() => setOpen(false)}
-        title="위치 변경"
-        isCloseOutsideClick={false}
-        position="center"
-        style={{ '--modal-w-sm': '384px' }}
-      >
-        <input
-          type="text"
-          placeholder="원하시는 위치를 검색하세요"
-          className="mt-3 w-full rounded-lg bg-[#F3F8FD] px-4 py-3 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-400"
+      {open && (
+        <LocationModal
+          isOpen={open}
+          onClose={() => setOpen(false)}
+          onConfirm={(loc) => setSelected(loc)}
         />
-        <ModalFooter>
-          <button
-            className="w-full rounded-xl bg-[#0d99ff] py-3 text-white font-medium hover:bg-blue-500"
-            onClick={() => setOpen(false)}
-          >
-            완료
-          </button>
-        </ModalFooter>
-      </Modal>
+      )}
     </>
   );
 }
+
+

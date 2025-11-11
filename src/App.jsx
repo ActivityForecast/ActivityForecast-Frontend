@@ -7,6 +7,7 @@ import CrewPage from 'pages/Crew/CrewPage';
 import { Route, Routes } from 'react-router-dom';
 import HistoryPage from 'pages/History/HistoryPage';
 import OAuthRedirect from 'pages/OAuthRedirect';
+import DetailPage from 'pages/Detail/DetailPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Gnb />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path='/detail' element={<DetailPage/>}/>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/crew" element={<CrewPage />} />
