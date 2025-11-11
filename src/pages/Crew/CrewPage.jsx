@@ -5,27 +5,27 @@ import CrewListItem from "mocks/CrewListItem";
 import Modal, { ModalFooter } from "components/Modal/Modal";
 import InputField from "components/InputField";
 import { useAuthStore } from 'stores/auth';
-import { listCrews } from 'api/crew';
+import { useCrewStore } from 'stores/crew';
 
 export default function CrewPage() {
   const { user } = useAuthStore();
+  const { myCrews, loadMyCrews, addCrew } = useCrewStore();
 
-  //  파스텔톤 색상 팔레트
-  const colorPalette = [
-    "#FC8385",
-    "#FCA883",
-    "#FCD083",
-    "#A4E682",
-    "#7FECC8",
-    "#83C8FC",
-    "#A6A4FC",
-    "#E6A4FC",
-    "#FC83C6",
-    "#FCE683",
-  ];
+  // 서버에서 크루 목록 로드
+  useEffect(() => {
+    if (user) {
+      loadMyCrews();
+    }
+  }, [user, loadMyCrews]);
 
-  const [crews, setCrews] = useState([]);
-  const [usedColors, setUsedColors] = useState(["#FC8385", "#83C8FC"]);
+  // API 응답 필드가 달라도 안전하게 매핑
+  const safeCrews = (myCrews || []).map((c) => ({
+    id: c.crewId ?? c.id,
+    name: c.crewName ?? c.name ?? '크루',
+    current: c.activeMemberCount ?? (Array.isArray(c.members) ? c.members.length : 0) ?? 1,
+    max: c.maxCapacity ?? c.max ?? 10,
+    color: c.colorCode ?? c.color ?? "#83C8FC",
+  }));
 
   //  생성 모달
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,58 +48,20 @@ export default function CrewPage() {
     ],
   };
 
-  // 랜덤 색상 선택 (중복 방지)
-  const getRandomColor = () => {
-    const availableColors = colorPalette.filter((c) => !usedColors.includes(c));
-    if (availableColors.length === 0) {
-      setUsedColors([]);
-      return colorPalette[Math.floor(Math.random() * colorPalette.length)];
-    }
-    const randomColor =
-      availableColors[Math.floor(Math.random() * availableColors.length)];
-    setUsedColors([...usedColors, randomColor]);
-    return randomColor;
-  };
-
-  // 서버에서 크루 목록 로드
-  useEffect(() => {
-    if (!user) {
-      setCrews([]);
-      return;
-    }
-    listCrews()
-      .then((data) => {
-        const list = Array.isArray(data) ? data : [];
-        const mapped = list.map((c) => ({
-          id: c.crewId,
-          name: c.crewName,
-          current: c.activeMemberCount ?? (Array.isArray(c.members) ? c.members.length : 0),
-          max: c.maxCapacity,
-          color: c.colorCode ?? "#83C8FC",
-        }));
-        setCrews(mapped);
-      })
-      .catch(() => {
-        setCrews([]);
-      });
-  }, [user]);
-
   // 크루 생성 로직
-  const handleCreateCrew = () => {
+  const handleCreateCrew = async () => {
     if (!crewName.trim() || !crewMax.trim()) return;
-
-    const newCrew = {
-      id: Date.now(),
-      name: crewName,
-      current: 1,
-      max: parseInt(crewMax, 10),
-      color: getRandomColor(),
-    };
-
-    setCrews((prev) => [...prev, newCrew]);
-    setCrewName("");
-    setCrewMax("");
-    setIsModalOpen(false);
+    try {
+      await addCrew({
+        crewName: crewName,
+        maxCapacity: parseInt(crewMax, 10),
+      });
+      setCrewName("");
+      setCrewMax("");
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('크루 생성 실패:', error);
+    }
   };
 
   // CrewListItem에서 탈퇴 클릭 시 → 완료 모달 띄우기
@@ -111,9 +73,13 @@ export default function CrewPage() {
   //  완료 클릭 시 실제 삭제
   const handleLeaveConfirm = () => {
     if (leaveTargetId == null) return;
-    setCrews((prev) => prev.filter((c) => c.id !== leaveTargetId));
+    // TODO: API 호출로 크루 탈퇴 처리
     setLeaveTargetId(null);
     setLeaveModalOpen(false);
+    // 목록 새로고침
+    if (user) {
+      loadMyCrews();
+    }
   };
 
   return (
@@ -162,18 +128,29 @@ export default function CrewPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {crews.map((c) => (
-                <CrewListItem
-                  key={c.id}
-                  id={c.id}
-                  name={c.name}
-                  current={c.current}
-                  max={c.max}
-                  color={c.color}
-                  events={crewEvents[c.id] || []}
-                  onLeave={handleLeaveRequest}   //  탈퇴 요청 핸들러
-                />
-              ))}
+              {safeCrews.length === 0 ? (
+                <div className="rounded-2xl border border-gray-200 bg-white py-14 px-6 text-center text-gray-400">
+                  <div className="text-base sm:text-lg">
+                    참여 중인 크루가 없습니다
+                  </div>
+                  <div className="mt-2 text-xs sm:text-sm text-gray-400">
+                    크루를 생성하여 다른 사람과 함께 운동해요
+                  </div>
+                </div>
+              ) : (
+                safeCrews.map((c) => (
+                  <CrewListItem
+                    key={c.id}
+                    id={c.id}
+                    name={c.name}
+                    current={c.current}
+                    max={c.max}
+                    color={c.color}
+                    events={crewEvents[c.id] || []}
+                    onLeave={handleLeaveRequest}
+                  />
+                ))
+              )}
             </div>
           )}
         </div>

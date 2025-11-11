@@ -18,7 +18,11 @@ export const useCrewStore = create((set, get) => ({
   },
 
   addCrew: async (payload) => {
-    const created = await Crew.createCrew(payload);
+    const created = await Crew.createCrew(payload).catch(() => undefined);
+    if (!created || (typeof created === 'object' && Object.keys(created).length === 0)) {
+      // Backend may return 201 with empty body; reload list to reflect server state
+      return await get().loadMyCrews();
+    }
     set({ myCrews: [...get().myCrews, created] });
     return created;
   },

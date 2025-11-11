@@ -2,8 +2,17 @@ import { api } from './axios';
 
 const unwrap = (res) => res.data?.data ?? res.data;
 
-export const listCrews = () => api.get('/api/crews').then(unwrap);
-export const createCrew = (body) => api.post('/crew', body).then(unwrap);
+export const listCrews = () => api.get('/crews').then(unwrap);
+export const createCrew = (body) => {
+  const payload = {
+    crewName: body.crewName ?? body.name,
+    description: body.description ?? '',
+    maxCapacity:
+      body.maxCapacity ?? body.max ?? body.capacity,
+    colorCode: body.colorCode ?? '#83C8FC',
+  };
+  return api.post('/crews', payload).then(unwrap);
+};
 export const joinCrew = (code) => api.post('/crew/join', { code }).then(unwrap);
 
 export const listCrewMembers = (crewId) =>
