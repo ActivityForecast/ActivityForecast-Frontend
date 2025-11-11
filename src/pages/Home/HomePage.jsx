@@ -22,16 +22,18 @@ export default function HomePage() {
   const handleApplyDate = (dateStr) => {
     setPickedDate(dateStr);
     setOpenCalendar(false);
-    // navigate(`/activities?date=${dateStr}`); 추가: 페이지 이동 or 날짜를 저장 => api 연동이후
+    // navigate(`/detail?date=${dateStr}`); 추가: 페이지 이동 or 날짜를 저장 => api 연동이후
   };
 
   const handleLoginClick = () => {
     navigate('/login');
   };
 
-  const handleActivityClick = (id) => {
-    navigate(`/activities/${id}`);
+/* 추가: 운동 상세페이지 현재 구현 x
+  const handleDetailClick = (id) => {
+    navigate(`/detail/${id}`);
   };
+*/
 
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-8 flex items-center justify-center">
@@ -74,13 +76,12 @@ export default function HomePage() {
                     key={act.id}
                     src={act.src}
                     label={act.label}
-                    onClick={() => handleActivityClick(act.id)}
                   />
                 ))}
               </div>
               <div className="mt-8 flex gap-4">
-                <Button onClick={() => navigate('/activities')} size='w-[240px] h-[56px]' className='text-sm sm:text-base'>
-                  맞춤추천확인
+                <Button onClick={() => navigate(`/detail?date=${pickedDate}`)} size='w-[240px] h-[56px]' className='text-sm sm:text-base'>
+                  맞춤 추천 확인
                 </Button>
                 <Button onClick={handleOpenCalendar} size='w-[240px] h-[56px]' className='text-sm sm:text-base'>
                   다른 날짜 고르기
