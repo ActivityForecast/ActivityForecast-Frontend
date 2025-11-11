@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "components/Button";
 import CalendarBox from "mocks/Calender";
 import CrewListItem from "mocks/CrewListItem";
 import Modal, { ModalFooter } from "components/Modal/Modal";
 import InputField from "components/InputField";
 import { useAuthStore } from 'stores/auth';
+import { listCrews } from 'api/crew';
 
 export default function CrewPage() {
   const { user } = useAuthStore();
@@ -23,10 +24,7 @@ export default function CrewPage() {
     "#FCE683",
   ];
 
-  const [crews, setCrews] = useState([
-    { id: 1, name: "농구하조", current: 3, max: 5, color: "#FC8385" },
-    { id: 2, name: "활동하조", current: 3, max: 5, color: "#83C8FC" },
-  ]);
+  const [crews, setCrews] = useState([]);
   const [usedColors, setUsedColors] = useState(["#FC8385", "#83C8FC"]);
 
   //  생성 모달
@@ -62,6 +60,29 @@ export default function CrewPage() {
     setUsedColors([...usedColors, randomColor]);
     return randomColor;
   };
+
+  // 서버에서 크루 목록 로드
+  useEffect(() => {
+    if (!user) {
+      setCrews([]);
+      return;
+    }
+    listCrews()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        const mapped = list.map((c) => ({
+          id: c.crewId,
+          name: c.crewName,
+          current: c.activeMemberCount ?? (Array.isArray(c.members) ? c.members.length : 0),
+          max: c.maxCapacity,
+          color: c.colorCode ?? "#83C8FC",
+        }));
+        setCrews(mapped);
+      })
+      .catch(() => {
+        setCrews([]);
+      });
+  }, [user]);
 
   // 크루 생성 로직
   const handleCreateCrew = () => {
