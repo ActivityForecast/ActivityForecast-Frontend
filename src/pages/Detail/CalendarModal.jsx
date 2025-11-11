@@ -1,4 +1,3 @@
-// components/CalendarAddedModal.jsx
 import Modal, { ModalFooter } from 'components/Modal/Modal';
 
 const WEEK_KO = ['일','월','화','수','목','금','토'];
