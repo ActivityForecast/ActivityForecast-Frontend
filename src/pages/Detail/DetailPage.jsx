@@ -1,4 +1,5 @@
 import ActivityCard from 'components/ActivityCard';
+import Button from 'components/Button';
 import { recommendedActivities } from 'mocks/Activities';
 import { useSearchParams } from 'react-router-dom';
 import { useLocationStore } from 'stores/location';
@@ -17,6 +18,8 @@ export default function DetailPage() {
 
   const sky = '맑음'; // 추가: 임시 날씨
 
+  const handleRetry = () => {alert("현재 다른 추천 미구현입니다.")}
+  const handleCardClick = () => {alert("현재 상세 카드 미구현입니다.")}
 
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-8 flex items-center justify-center">
@@ -33,17 +36,19 @@ export default function DetailPage() {
             <div className='flex gap-2 sm:gap-3 items-center'><span className="inline-block h-5 w-5 rounded-full bg-[#22c55e]" />미세먼지 맑음</div>
           </div>
           <div className='mt-8'>
-            <div className="mx-auto flex gap-2 justify-between max-w-[800px]">
+            <div className="mx-auto flex gap-2 justify-between max-w-[900px]">
               {recommendedActivities.map((act) => (
                 <ActivityCard
                   key={act.id}
                   src={act.src}
                   label={act.label}
                   size='lg'
+                  onClick={handleCardClick}
                 />
               ))}
             </div>
           </div>
+          <Button onClick={handleRetry} className='mt-4' size='w-[180px] h-12'>다른 추천받기</Button>
         </div>
       </section>
     </main>
