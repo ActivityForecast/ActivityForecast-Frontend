@@ -36,7 +36,7 @@ export default function LocationModal({ isOpen = true, onClose, onConfirm }) {
 
       // 모달이 닫혀 있거나, 최소 길이 미만이면 아무 것도 하지 않습니다.
       const q = (debounced || '').trim();
-      if (q.length < 1 || !isOpen) {
+      if (q.length < 2 || !isOpen) {
         setList([]);
         return;
       }
@@ -200,7 +200,7 @@ export default function LocationModal({ isOpen = true, onClose, onConfirm }) {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="원하시는 위치를 검색하세요"
+              placeholder="원하시는 위치를 검색하세요(2글자 이상)"
               className="w-full rounded-lg bg-[#F3F8FD] px-4 py-3 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-400"
             />
 
