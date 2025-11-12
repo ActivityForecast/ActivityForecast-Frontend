@@ -10,3 +10,9 @@ export const updateUserProfile = (body, config) =>
   api.put('/user/profile', body, config).then(unwrap);
 export const deleteUserAccount = (body) =>
   api.delete('/user/account', { data: body }).then(unwrap);
+export const updateUserPreferences = (ids) =>
+  api
+    .put('/user/preferences', {
+      preferences: ids.map((id) => ({ activityId: Number(id) })),
+    })
+    .then(unwrap);

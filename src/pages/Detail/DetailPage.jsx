@@ -32,7 +32,10 @@ export default function DetailPage() {
   }, [selected, setSelected]);
 
   const { isLoading, error, data } = useWeather(date);
-  const uiWeather = useMemo(() => (data ? mapWeatherToCard(data) : null), [data]);
+  const uiWeather = useMemo(
+    () => (data ? mapWeatherToCard(data) : null),
+    [data]
+  );
 
   const locName = getLocationName(selected);
 
@@ -40,15 +43,15 @@ export default function DetailPage() {
   const active = recommendedActivities.find((a) => a.id === activeId) || null;
 
   const mergedActive = activeId
-  ? { ...active, ...(ACTIVITY_DETAILS[activeId] || {}) }
-  : null;
+    ? { ...active, ...(ACTIVITY_DETAILS[activeId] || {}) }
+    : null;
 
   const handleCardClick = (id) => setActiveId(id);
   const handleBack = () => setActiveId(null);
   const handleRetry = () => alert('현재 다른 추천 미구현입니다.');
   const handleCalendar = () => {
-  setOpenAdded(true);
-};
+    setOpenAdded(true);
+  };
 
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-8 flex items-center justify-center">
@@ -59,14 +62,20 @@ export default function DetailPage() {
           {isLoading ? (
             <p className="mt-4 text-lg text-gray-600">날씨 불러오는 중…</p>
           ) : error ? (
-            <p className="mt-4 text-lg text-red-600">날씨 정보를 가져오지 못했습니다.</p>
+            <p className="mt-4 text-lg text-red-600">
+              날씨 정보를 가져오지 못했습니다.
+            </p>
           ) : uiWeather ? (
             <p className="mt-4 text-lg text-gray-700">
-              {formatMd(date)} <span className="font-semibold">{locName}</span>의 날씨는{' '}
-              <span className="font-semibold">{uiWeather.conditionText}</span>입니다.
+              {formatMd(date)} <span className="font-semibold">{locName}</span>
+              의 날씨는{' '}
+              <span className="font-semibold">{uiWeather.conditionText}</span>
+              입니다.
             </p>
           ) : (
-            <p className="mt-4 text-lg text-gray-600">표시할 날씨 정보가 없습니다.</p>
+            <p className="mt-4 text-lg text-gray-600">
+              표시할 날씨 정보가 없습니다.
+            </p>
           )}
 
           {uiWeather && (
@@ -104,7 +113,11 @@ export default function DetailPage() {
                 </div>
               </div>
 
-              <Button onClick={handleRetry} className="mt-6" size="w-[180px] h-12">
+              <Button
+                onClick={handleRetry}
+                className="mt-6"
+                size="w-[180px] h-12"
+              >
                 다른 추천받기
               </Button>
             </>
@@ -125,8 +138,8 @@ export default function DetailPage() {
           <CalendarAddedModal
             isOpen={openAdded}
             onClose={() => setOpenAdded(false)}
-            dateYmd={date}                      
-            locationName={getLocationName(selected)} 
+            dateYmd={date}
+            locationName={getLocationName(selected)}
             activityLabel={mergedActive?.label || ''}
           />
         </div>
