@@ -11,6 +11,7 @@ const fromYMD = (s) => {
 const formatKoreanDate = (d) =>
   `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 
+/* 시간은 당장 사용 안 할 것 같아서 주석처리
 const makeTimeOptions = (stepMin = 30) => {
   const arr = [];
   for (let h = 0; h < 24; h++) {
@@ -20,7 +21,7 @@ const makeTimeOptions = (stepMin = 30) => {
   }
   return arr;
 };
-
+*/
 
 const buildCalendar = (baseDate) => {
   const first = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
@@ -44,7 +45,7 @@ const buildCalendar = (baseDate) => {
 export default function CalendarModal({
   isOpen,
   initialDate,       
-  initialTime = '15:30',
+  //initialTime = '15:30',
   min,              
   max,             
   title = '날짜를 선택해주세요',
@@ -54,7 +55,7 @@ export default function CalendarModal({
 }) {
 
   const [selected, setSelected] = useState(fromYMD(initialDate || toYMD(new Date())));
-  const [time, setTime] = useState(initialTime);
+  //const [time, setTime] = useState(initialTime);
   const [cursorMonth, setCursorMonth] = useState(() => {
     const d = initialDate ? fromYMD(initialDate) : new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -63,16 +64,16 @@ export default function CalendarModal({
   const minDate = useMemo(() => (min ? fromYMD(min) : null), [min]);
   const maxDate = useMemo(() => (max ? fromYMD(max) : null), [max]);
   const weeks = useMemo(() => buildCalendar(cursorMonth), [cursorMonth]);
-  const timeOptions = useMemo(() => makeTimeOptions(30), []);
+  //const timeOptions = useMemo(() => makeTimeOptions(30), []);
 
   useEffect(() => {
     if (isOpen) {
       const init = fromYMD(initialDate || toYMD(new Date()));
       setSelected(init);
       setCursorMonth(new Date(init.getFullYear(), init.getMonth(), 1));
-      setTime(initialTime || '15:30');
+      //setTime(initialTime || '15:30');
     }
-  }, [isOpen, initialDate, initialTime]);
+  }, [isOpen, initialDate/*, initialTime*/]);
 
   const isSameDay = (a, b) =>
     a.getFullYear() === b.getFullYear() &&
@@ -105,7 +106,7 @@ export default function CalendarModal({
         <div className="mt-4 flex gap-2">
           <div className="flex-1 items-center rounded-xl border border-gray-500 px-3 py-2 text-xs sm:text-sm font-medium text-gray-800 bg-white">
             {formatKoreanDate(selected)}
-          </div>
+          </div>{/*
           <div className="flex items-center rounded-xl border border-gray-500 px-3 py-1.5 bg-white">
             <select
               value={time}
@@ -122,7 +123,7 @@ export default function CalendarModal({
                 );
               })}
             </select>
-          </div>
+          </div>*/}
         </div>
 
         <div className="mt-3 rounded-2xl border border-gray-500 p-3">

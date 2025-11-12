@@ -4,14 +4,13 @@ import { ReactComponent as DownArrowIcon } from 'assets/icons/downarrow.svg';
 import { useLocationStore } from 'stores/location';
 import LocationModal from './LocationModal';
 
-
 export default function LocationSelector() {
   const [open, setOpen] = useState(false);
   const { selected, setSelected } = useLocationStore();
-  const label = useMemo(() => selected?.name || '서울시 마포구', [selected]);
+  const label = useMemo(() => selected?.name || '가천대역 수인분당선', [selected]);
 
   return (
-    <>
+    <div>
       <div
         className="flex items-center gap-1 sm:gap-2 font-medium text-lg sm:text-xl cursor-pointer select-none"
         onClick={() => setOpen(true)}
@@ -35,7 +34,7 @@ export default function LocationSelector() {
           onConfirm={(loc) => setSelected(loc)}
         />
       )}
-    </>
+    </div>
   );
 }
 
