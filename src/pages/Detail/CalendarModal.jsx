@@ -1,21 +1,21 @@
 import Modal, { ModalFooter } from 'components/Modal/Modal';
 
-const WEEK_KO = ['일','월','화','수','목','금','토'];
+const WEEK_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const fromYmd = (s) => {
-  const [y,m,d] = s.split('-').map(Number);
-  return new Date(y, (m||1)-1, d||1);
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
 };
 const formatDateKo = (ymd) => {
   const d = fromYmd(ymd);
-  return `${d.getMonth()+1}월 ${d.getDate()}일 (${WEEK_KO[d.getDay()]})`;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEK_KO[d.getDay()]})`;
 };
 
 export default function CalendarAddedModal({
   isOpen,
   onClose,
-  dateYmd,       
-  locationName,    
-  activityLabel,     
+  dateYmd,
+  locationName,
+  activityLabel,
 }) {
   return (
     <Modal

@@ -65,7 +65,10 @@ export default function SignupForm({
 
   return (
     <>
-      <form onSubmit={(e) => e.preventDefault()} className="space-y-10 bg-transparent font-medium">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="space-y-10 bg-transparent font-medium"
+      >
         <div className="space-y-6">
           <div className="space-y-3">
             <label htmlFor="nickname">이름</label>

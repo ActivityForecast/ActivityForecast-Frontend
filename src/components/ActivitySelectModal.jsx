@@ -3,7 +3,12 @@ import Modal, { ModalFooter } from 'components/Modal/Modal';
 import Button from 'components/Button';
 
 const CATEGORIES = ['유산소', '구기스포츠', '익스트림스포츠', '피트니스'];
-const EMPTY_SELECTED = { 유산소: [], 구기스포츠: [], 익스트림스포츠: [], 피트니스: [] };
+const EMPTY_SELECTED = {
+  유산소: [],
+  구기스포츠: [],
+  익스트림스포츠: [],
+  피트니스: [],
+};
 
 export default function ActivitySelectModal({
   isOpen,
@@ -19,15 +24,19 @@ export default function ActivitySelectModal({
   );
 
   useEffect(() => {
-   if (!isOpen) return;
-   const next = Object.fromEntries(
-     CATEGORIES.map((c) => [
-       c,
-      new Set((initialSelected?.[c] || []).map((x) => (typeof x === 'string' ? x : x.id))),
-     ])
-   );
-   setSelected(next);
-   setActiveCategory(CATEGORIES[0]);
+    if (!isOpen) return;
+    const next = Object.fromEntries(
+      CATEGORIES.map((c) => [
+        c,
+        new Set(
+          (initialSelected?.[c] || []).map((x) =>
+            typeof x === 'string' ? x : x.id
+          )
+        ),
+      ])
+    );
+    setSelected(next);
+    setActiveCategory(CATEGORIES[0]);
   }, [isOpen, initialSelected]);
 
   const currentList = useMemo(
