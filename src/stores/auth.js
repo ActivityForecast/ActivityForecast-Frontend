@@ -1,4 +1,3 @@
-// src/stores/auth.js
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as Auth from '../api/auth';
@@ -78,6 +77,16 @@ export const useAuthStore = create(
             set({ user: null, accessToken: null, refreshToken: null });
           }
           throw e;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      deleteAccount: async ({ password, reason }) => {
+        set({ isLoading: true });
+        try {
+          await Auth.deleteUserAccount({ password, reason });
+          set({ user: null, accessToken: null, refreshToken: null });
+          return true;
         } finally {
           set({ isLoading: false });
         }

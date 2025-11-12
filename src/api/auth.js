@@ -8,3 +8,5 @@ export const logout = () => api.post('/auth/logout').then(unwrap);
 export const fetchMe = () => api.get('/auth/me').then(unwrap);
 export const updateUserProfile = (body, config) =>
   api.put('/user/profile', body, config).then(unwrap);
+export const deleteUserAccount = (body) =>
+  api.delete('/user/account', { data: body }).then(unwrap);

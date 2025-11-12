@@ -22,7 +22,7 @@ export default function Option() {
     피트니스: [],
   });
 
-   const { logout } = useAuthStore();
+  const { logout, deleteAccount } = useAuthStore();
   const navigate = useNavigate();
 
   const handlePrefClick = () => {
@@ -37,7 +37,7 @@ export default function Option() {
     setOpenWithdraw(true);
   };
 
-   const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       await logout();
     } finally {
@@ -45,9 +45,14 @@ export default function Option() {
     }
   };
 
-  const handleConfirmWithdraw = () => {
-    setOpenWithdraw(false);
-    alert('회원탈퇴 플로우 예정');
+  const handleConfirmWithdraw = async ({ password, reason }) => {
+    try {
+      await deleteAccount({ password, reason });
+      setOpenWithdraw(false);
+      navigate('/', { replace: true });
+    } catch (e) {
+      alert(e?.response?.data?.message || '회원탈퇴에 실패했어요.');
+    }
   };
 
   const handleConfirmPref = (payload) => {
@@ -114,14 +119,14 @@ export default function Option() {
       />
 
       <HelpModal open={openHelp} onClose={() => setOpenHelp(false)} />
-        
+
       <ActivitySelectModal
-       isOpen={openPrefModal}
-       onClose={() => setOpenPrefModal(false)}
-       onConfirm={handleConfirmPref}
-       activities={activities}
-      initialSelected={prefSelected}
-    />
+        isOpen={openPrefModal}
+        onClose={() => setOpenPrefModal(false)}
+        onConfirm={handleConfirmPref}
+        activities={activities}
+        initialSelected={prefSelected}
+      />
     </>
   );
 }
