@@ -38,6 +38,33 @@ export const validateConfirmPassword = (value) => {
   return undefined;
 };
 
+export const validatePasswordOptional = (value) => {
+  // 비어 있으면 변경 안 하는 것이므로 통과
+  if (!value.trim()) return undefined;
+  // 값을 넣었다면 기존 규칙으로 검증
+  return validatePassword(value);
+};
+
+// ✅ 프로필 수정용: "새 비번"과의 일치 확인 (DOM 접근 없이 클로저로 비교)
+export const makeConfirmPasswordValidator = (newPasswordValueOrGetter) => {
+  return (value) => {
+    const newPw =
+      typeof newPasswordValueOrGetter === 'function'
+        ? newPasswordValueOrGetter()
+        : newPasswordValueOrGetter;
+
+    const hasNew = !!(newPw && newPw.trim());
+    const hasConfirm = !!(value && value.trim());
+
+    // 새 비번을 안 쓰면 확인도 필요 없음
+    if (!hasNew && !hasConfirm) return undefined;
+
+    if (!hasConfirm) return '비밀번호 확인을 입력해주세요.';
+    if (value !== newPw) return '비밀번호가 일치하지 않습니다.';
+    return undefined;
+  };
+};
+
 export const validateUserUpdated = (prevData, newData) => {
   const isNicknameChanged =
     prevData.nickname.trim() !== newData.nickname.trim();

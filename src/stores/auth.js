@@ -1,6 +1,7 @@
+// src/stores/auth.js
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import * as Auth from '../api/auth'
+import * as Auth from '../api/auth';
 
 export const useAuthStore = create(
   persist(
@@ -11,8 +12,16 @@ export const useAuthStore = create(
       tokenType: 'Bearer',
       isLoading: false,
 
+      isLoggedIn: () => !!get().accessToken,
+
       setAccessToken: (t) => set({ accessToken: t }),
       setUser: (u) => set({ user: u }),
+
+      refreshMe: async () => {
+        const me = await Auth.fetchMe();
+        set((s) => ({ user: { ...s.user, ...me } }));
+        return me;
+      },
 
       signup: async (payload) => {
         set({ isLoading: true });
@@ -51,6 +60,27 @@ export const useAuthStore = create(
           await Auth.logout();
         } catch (_) {}
         set({ user: null, accessToken: null, refreshToken: null });
+      },
+
+      updateProfile: async (payload) => {
+        set({ isLoading: true });
+        try {
+          const updated = await Auth.updateUserProfile(payload);
+          set((s) => ({
+            user: {
+              ...s.user,
+              ...updated,
+            },
+          }));
+          return updated;
+        } catch (e) {
+          if (e?.response?.status === 401) {
+            set({ user: null, accessToken: null, refreshToken: null });
+          }
+          throw e;
+        } finally {
+          set({ isLoading: false });
+        }
       },
     }),
     {
