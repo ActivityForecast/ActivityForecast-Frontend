@@ -97,7 +97,7 @@ export const useCrewStore = create((set, get) => ({
   // 크루 일정 생성
   addCrewSchedule: async (crewId, schedulePayload) => {
     try {
-      const created = await Crew.createCrewSchedule(crewId, schedulePayload).catch(() => null);
+      const created = await Crew.createCrewSchedule(crewId, schedulePayload);
       if (created) {
         // 일정 생성 후 해당 크루의 일정 목록 새로고침
         const currentSchedules = get().schedulesByCrewId[crewId] || [];
@@ -110,7 +110,9 @@ export const useCrewStore = create((set, get) => ({
       }
       return created;
     } catch (error) {
-      return null;
+      console.error('일정 생성 API 오류:', error);
+      console.error('요청 바디:', schedulePayload);
+      throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
     }
   },
 
