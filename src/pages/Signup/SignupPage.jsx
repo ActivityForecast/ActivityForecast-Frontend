@@ -9,7 +9,12 @@ export default function SignupPage() {
   const [err, setErr] = useState('');
   const navigate = useNavigate();
 
-  const handleSignup = async ({ name, email, password, preferredActivityIds }) => {
+  const handleSignup = async ({
+    name,
+    email,
+    password,
+    preferredActivityIds,
+  }) => {
     setErr('');
     try {
       await signup({ name, email, password, preferredActivityIds });

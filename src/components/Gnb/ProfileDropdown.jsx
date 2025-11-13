@@ -12,8 +12,7 @@ function ProfileDropdown() {
   const { user, logout } = useAuthStore();
 
   const displayName =
-    user?.name ||
-    (user?.email ? user.email.split('@')[0] : '사용자');
+    user?.name || (user?.email ? user.email.split('@')[0] : '사용자');
 
   const handleLogout = async () => {
     try {
@@ -26,10 +25,13 @@ function ProfileDropdown() {
   return (
     <Dropdown>
       <DropdownButton className="flex items-center justify-center px-1 gap-1 sm:px-3 py-2 rounded-lg hover:bg-gray-100">
-        {displayName} <ArrowupIcon/>
+        {displayName} <ArrowupIcon />
       </DropdownButton>
-      <DropdownMenu className="w-[120px]">
-        <DropdownMenuItem className="text-center" onClick={() => navigate('/mypage')}>
+      <DropdownMenu className="w-[130px]">
+        <DropdownMenuItem
+          className="text-center"
+          onClick={() => navigate('/mypage')}
+        >
           마이페이지
         </DropdownMenuItem>
         <DropdownMenuItem

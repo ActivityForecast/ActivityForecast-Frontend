@@ -31,5 +31,5 @@ export async function getAirQuality({ lat, lon }, { signal } = {}) {
     params: { lat, lon },
     signal,
   });
-  return (data && data.data) ? data.data : data;
+  return data && data.data ? data.data : data;
 }

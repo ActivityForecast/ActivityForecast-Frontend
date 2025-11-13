@@ -4,8 +4,10 @@ import Button from 'components/Button';
 import {
   validateNickname,
   validatePassword,
-  validateConfirmPassword,
+  validatePasswordOptional,
+  makeConfirmPasswordValidator,
 } from 'utils/formValidators';
+import { useAuthStore } from 'stores/auth';
 
 export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
   const safeNickname = defaultUser.nickname ?? defaultUser.name ?? '';
@@ -22,25 +24,32 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
   const validateForm = useCallback(() => {
     const nameError = validateNickname(formData.nickname.trim()) || '';
 
-    const wantsChangePw =
-      formData.currentPassword ||
-      formData.newPassword ||
-      formData.confirmPassword;
+    const hasCurrent = !!formData.currentPassword?.trim();
+    const hasNew = !!formData.newPassword?.trim();
+    const hasConfirm = !!formData.confirmPassword?.trim();
+    const wantsChangePw = hasCurrent || hasNew || hasConfirm;
 
+    let currentError = '';
     let pwError = '';
     let confirmError = '';
 
     if (wantsChangePw) {
-      pwError = validatePassword(formData.newPassword.trim()) || '';
-      confirmError =
-        validateConfirmPassword(formData.confirmPassword.trim()) || '';
-
-      if (!confirmError && formData.newPassword !== formData.confirmPassword) {
+      if (!hasCurrent) currentError = '현재 비밀번호를 입력해주세요.';
+      if (!hasNew) {
+        pwError = '새 비밀번호를 입력해주세요.';
+      } else {
+        pwError = validatePassword(formData.newPassword.trim()) || '';
+      }
+      if (!hasConfirm) {
+        confirmError = '비밀번호 확인을 입력해주세요.';
+      } else if (formData.newPassword !== formData.confirmPassword) {
         confirmError = '비밀번호가 일치하지 않습니다.';
       }
     }
 
-    const hasError = [nameError, pwError, confirmError].some(Boolean);
+    const hasError = [nameError, currentError, pwError, confirmError].some(
+      Boolean
+    );
     setIsValidated(!hasError);
   }, [formData]);
 
@@ -53,12 +62,29 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValidated) return;
-    // 추가: patch 요청
-    alert('현재 패치 요청 적용 x');
-    onSaved?.();
+    const wantsChangePw =
+      !!formData.newPassword?.trim() || !!formData.confirmPassword?.trim();
+
+    const payload = {
+      name: formData.nickname.trim(),
+      passwordUpdateRequested: wantsChangePw,
+      ...(wantsChangePw && {
+        password: formData.newPassword.trim(),
+        confirmPassword: formData.confirmPassword.trim(),
+        passwordMatch:
+          formData.newPassword.trim() === formData.confirmPassword.trim(),
+      }),
+    };
+
+    try {
+      await useAuthStore.getState().updateProfile(payload);
+      onSaved?.();
+    } catch (err) {
+      alert(err?.response?.data?.message || '프로필 수정에 실패했어요.');
+    }
   };
 
   return (
@@ -106,7 +132,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
             placeholder="새 비밀번호를 입력해주세요."
             value={formData.newPassword}
             onChange={handleChange}
-            validator={validatePassword}
+            validator={validatePasswordOptional}
             isPassword
           />
         </div>
@@ -119,7 +145,7 @@ export default function ProfileEditForm({ defaultUser, onCancel, onSaved }) {
             placeholder="새 비밀번호를 다시 한 번 입력해주세요."
             value={formData.confirmPassword}
             onChange={handleChange}
-            validator={validateConfirmPassword}
+            validator={makeConfirmPasswordValidator(() => formData.newPassword)}
             isPassword
           />
         </div>

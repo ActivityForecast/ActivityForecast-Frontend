@@ -1,49 +1,50 @@
 export default function ActivityCard({
   src,
   label,
-  alt = "",
-  onClick,        
-  size = "md",          
-  className = "",
+  alt = '',
+  onClick,
+  size = 'md',
+  className = '',
 }) {
-  const interactive = typeof onClick === "function";
-  const Wrapper = interactive ? "button" : "div";
+  const interactive = typeof onClick === 'function';
+  const Wrapper = interactive ? 'button' : 'div';
 
   const sizeMap = {
     md: {
-      wrapper: "w-[96px] sm:w-[120px]",
-      label: "mt-2 text-center text-base sm:text-lg font-semibold text-gray-800",
+      wrapper: 'w-[96px] sm:w-[120px]',
+      label:
+        'mt-2 text-center text-base sm:text-lg font-semibold text-gray-800',
     },
     lg: {
-      wrapper: "w-[160px] sm:w-[200px]",
-      label: "mt-3 text-center text-xl font-semibold text-gray-800",
+      wrapper: 'w-[160px] sm:w-[200px]',
+      label: 'mt-3 text-center text-xl font-semibold text-gray-800',
     },
   };
   const sz = sizeMap[size] ?? sizeMap.md;
 
   const a11yProps = interactive
     ? {
-        type: "button",
+        type: 'button',
         onClick,
-        "aria-label": label,
+        'aria-label': label,
         onKeyDown: (e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onClick?.(e);
           }
         },
       }
-    : { "aria-label": label, tabIndex: -1 };
+    : { 'aria-label': label, tabIndex: -1 };
 
   return (
     <Wrapper
       {...a11yProps}
       className={[
-        "group select-none",
+        'group select-none',
         sz.wrapper,
-        interactive ? "cursor-pointer" : "cursor-default",
+        interactive ? 'cursor-pointer' : 'cursor-default',
         className,
-      ].join(" ")}
+      ].join(' ')}
     >
       <div className="overflow-hidden rounded-lg">
         <div className={sz.imageBox}>
