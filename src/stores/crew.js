@@ -74,12 +74,18 @@ export const useCrewStore = create((set, get) => ({
   // 크루 일정 조회
   loadCrewSchedules: async (crewId, year, month) => {
     try {
-      const schedules = await Crew.getCrewSchedules(crewId, year, month).catch(() => []);
+      const schedules = await Crew.getCrewSchedules(crewId, year, month).catch((error) => {
+        console.error('일정 조회 GET 요청 오류:', error);
+        console.error('에러 응답:', error?.response?.data);
+        return [];
+      });
       set({
         schedulesByCrewId: { ...get().schedulesByCrewId, [crewId]: schedules },
       });
       return schedules;
     } catch (error) {
+      console.error('일정 조회 오류:', error);
+      console.error('에러 응답:', error?.response?.data);
       return [];
     }
   },
@@ -87,9 +93,15 @@ export const useCrewStore = create((set, get) => ({
   // 전체 크루 일정 조회
   loadAllCrewSchedules: async (year, month) => {
     try {
-      const schedules = await Crew.getAllCrewSchedules(year, month).catch(() => []);
+      const schedules = await Crew.getAllCrewSchedules(year, month).catch((error) => {
+        console.error('전체 일정 조회 GET 요청 오류:', error);
+        console.error('에러 응답:', error?.response?.data);
+        return [];
+      });
       return schedules;
     } catch (error) {
+      console.error('전체 일정 조회 오류:', error);
+      console.error('에러 응답:', error?.response?.data);
       return [];
     }
   },

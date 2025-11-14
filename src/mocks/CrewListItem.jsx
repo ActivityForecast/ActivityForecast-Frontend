@@ -228,7 +228,10 @@ export default function CrewListItem({
         title="새 일정 만들기"
         color={color}
         onSave={async (data) => {
-          if (!id) return;
+          if (!id) {
+            alert('크루 정보를 찾을 수 없습니다.');
+            return;
+          }
           
           try {
             // 활동 ID 찾기 (activities에서 activity 이름으로 찾기)
