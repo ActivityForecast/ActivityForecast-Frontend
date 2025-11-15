@@ -17,6 +17,11 @@ function getLocationName(sel) {
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
+const getCurrentTimeSlot = () => {
+  const now = new Date();
+  return `${pad2(now.getHours())}:00`;
+};
+
 const toISODateTime = (ymd, time) => {
   const [h = '15', m = '00'] = (time || '15:00').split(':');
   const hh = pad2(h);
@@ -29,8 +34,9 @@ export default function DetailPage() {
   const [params] = useSearchParams();
 
   const defaultDate = new Date().toISOString().slice(0, 10);
+  const defaultTime = getCurrentTimeSlot();
   const date = params.get('date') || defaultDate;
-  const time = params.get('time') || '15:00';
+  const time = params.get('time') || defaultTime;
 
   const { selected, setSelected } = useLocationStore();
   useEffect(() => {
@@ -38,11 +44,10 @@ export default function DetailPage() {
   }, [selected, setSelected]);
 
   const { isLoading, error, data } = useWeather(date, time);
- const uiWeather = useMemo(
-  () => (data ? mapWeatherToCard(data, date) : null),
-  [data, date]
-);
-
+  const uiWeather = useMemo(
+    () => (data ? mapWeatherToCard(data, date) : null),
+    [data, date]
+  );
 
   const locName = getLocationName(selected);
   const [recActivities, setRecActivities] = useState([]);
@@ -82,8 +87,7 @@ export default function DetailPage() {
       } catch (e) {
         console.error(e);
         const msg =
-          e?.response?.data?.message ||
-          '추천 활동을 불러오는 데 실패했어요.';
+          e?.response?.data?.message || '추천 활동을 불러오는 데 실패했어요.';
         setRecError(msg);
       } finally {
         setRecLoading(false);
@@ -133,15 +137,20 @@ export default function DetailPage() {
             </p>
           ) : uiWeather ? (
             <p className="mt-4 text-lg text-gray-700">
-              {formatMd(date)}{' '}
-              <span className="font-semibold">{locName}</span>의 날씨는{' '}
+              {formatMd(date)} <span className="font-semibold">{locName}</span>
+              의 날씨는{' '}
               <span className="font-semibold">{uiWeather.conditionText}</span>
               입니다.
             </p>
           ) : (
             <div className="mx-auto w-full max-w-[480px] text-center h-60 rounded-md border border-gray-200 flex flex-col items-center justify-center text-sm text-gray-600">
-            표시할 날씨 정보가 없습니다. <span className='mt-5'>활동예보는 3시간 예보에 맞춰 가장 가까운 시간으로 자동 조정됩니다. <br/> 오후 9시 이후 당일 날씨는 안 보여질 수 있습니다.</span>
-          </div>
+              표시할 날씨 정보가 없습니다.{' '}
+              <span className="mt-5">
+                활동예보는 3시간 예보에 맞춰 가장 가까운 시간으로 자동
+                조정됩니다. <br /> 오후 9시 이후 당일 날씨는 안 보여질 수
+                있습니다.
+              </span>
+            </div>
           )}
 
           {uiWeather && (
@@ -212,8 +221,7 @@ export default function DetailPage() {
               activity={{
                 ...mergedActive,
                 gears: mergedActive?.gears || ['운동화', '물병'],
-                notes:
-                  mergedActive?.notes || ['충분한 스트레칭', '수분 보충'],
+                notes: mergedActive?.notes || ['충분한 스트레칭', '수분 보충'],
               }}
               weather={uiWeather}
               onBack={handleBack}

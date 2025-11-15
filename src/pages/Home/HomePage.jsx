@@ -14,6 +14,12 @@ import { fetchMainRecommendationsForCards } from 'api/recommendation';
 const pad2 = (n) => String(n).padStart(2, '0');
 const toYMD = (d) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+const getCurrentTimeSlot = () => {
+  const now = new Date();
+  return `${pad2(now.getHours())}:00`;
+};
+
 const addDays = (d, n) => {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
@@ -32,10 +38,13 @@ export default function HomePage() {
   const { accessToken, isLoading } = useAuthStore();
   const isLoggedIn = !!accessToken;
 
-  const [picked, setPicked] = useState(() => ({
-    date: toYMD(new Date()),
-    time: '15:00',
-  }));
+  const [picked, setPicked] = useState(() => {
+    const now = new Date();
+    return {
+      date: toYMD(now),
+      time: getCurrentTimeSlot(),
+    };
+  });
   const pickedDate = picked.date;
   const pickedTime = picked.time;
 
@@ -50,10 +59,10 @@ export default function HomePage() {
     data: todayRes,
   } = useWeather(pickedDate, pickedTime);
 
-const uiWeather = useMemo(
-  () => (todayRes ? mapWeatherToCard(todayRes, pickedDate) : null),
-  [todayRes, pickedDate]
-);
+  const uiWeather = useMemo(
+    () => (todayRes ? mapWeatherToCard(todayRes, pickedDate) : null),
+    [todayRes, pickedDate]
+  );
 
   const [openCalendar, setOpenCalendar] = useState(false);
 
@@ -114,8 +123,7 @@ const uiWeather = useMemo(
       } catch (e) {
         console.error(e);
         const msg =
-          e?.response?.data?.message ||
-          '추천 활동을 불러오는 데 실패했어요.';
+          e?.response?.data?.message || '추천 활동을 불러오는 데 실패했어요.';
         setRecError(msg);
       } finally {
         setRecLoading(false);
@@ -148,7 +156,11 @@ const uiWeather = useMemo(
           <WeatherCard weather={uiWeather} />
         ) : (
           <div className="mx-auto w-full max-w-[480px] text-center h-60 rounded-md border border-gray-200 flex flex-col items-center justify-center text-sm text-gray-600">
-            표시할 날씨 정보가 없습니다. <span className='mt-5'>활동예보는 3시간 예보에 맞춰 가장 가까운 시간으로 자동 조정됩니다. <br/> 오후 9시 이후 당일 날씨는 안 보여질 수 있습니다.</span>
+            표시할 날씨 정보가 없습니다.{' '}
+            <span className="mt-5">
+              활동예보는 3시간 예보에 맞춰 가장 가까운 시간으로 자동 조정됩니다.{' '}
+              <br /> 오후 9시 이후 당일 날씨는 안 보여질 수 있습니다.
+            </span>
           </div>
         )}
 
@@ -212,9 +224,7 @@ const uiWeather = useMemo(
               <div className="mt-8 flex gap-4">
                 <Button
                   onClick={() =>
-                    navigate(
-                      `/detail?date=${pickedDate}&time=${pickedTime}`
-                    )
+                    navigate(`/detail?date=${pickedDate}&time=${pickedTime}`)
                   }
                   size="w-[240px] h-[56px]"
                   className="text-sm sm:text-base"
