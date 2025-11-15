@@ -60,6 +60,7 @@ export default function ActivityDetailCard({
             />
           </div>
 
+{/* 주의사항은 따로 데이터가 준비된게 api에 없어보여서 주석처리 하겠습니다.
           {activity.notes?.length > 0 && (
             <div className="mt-4 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
               <div className="font-semibold mb-2">주의사항</div>
@@ -69,7 +70,7 @@ export default function ActivityDetailCard({
                 ))}
               </ul>
             </div>
-          )}
+          )}*/}
         </div>
 
         <div className="md:col-span-2 flex flex-col">
@@ -84,6 +85,8 @@ export default function ActivityDetailCard({
                 {comfortBadge}
               </span>
             </div>
+
+{/* 준비물 또한, 따로 데이터가 준비된게 api에서 없어보여서 주석처리 하겠습니다.
             <div className="text-lg font-semibold text-gray-900 mb-3">
               준비물
             </div>
@@ -98,10 +101,13 @@ export default function ActivityDetailCard({
                 </span>
               ))}
             </div>
+            */}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-gray-200 p-5">
-            <div className="text-lg font-semibold text-gray-900 mb-3">날씨</div>
+          <div className="my-5 rounded-2xl border border-gray-200 p-5">
+            <div className="text-lg font-semibold text-gray-900 mb-3">
+              날씨
+            </div>
             {weather ? (
               <div>
                 <div className="text-4xl font-semibold">
