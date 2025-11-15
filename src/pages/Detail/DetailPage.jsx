@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ActivityCard from 'components/ActivityCard';
 import ActivityDetailCard from './ActivityDetailCard';
 import Button from 'components/Button';
@@ -10,6 +10,7 @@ import { mapWeatherToCard } from 'utils/mapWeatherToCard';
 import { formatMd } from 'utils/formatMd';
 import CalendarAddedModal from './CalendarModal';
 import { fetchMainRecommendationsForCards } from 'api/recommendation';
+import { useAuthStore } from 'stores/auth';
 
 function getLocationName(sel) {
   return sel?.name || sel?.label || sel?.city || sel?.address || '선택한 위치';
@@ -32,6 +33,16 @@ const toISODateTime = (ymd, time) => {
 export default function DetailPage() {
   const [openAdded, setOpenAdded] = useState(false);
   const [params] = useSearchParams();
+
+  const navigate = useNavigate();
+  const { accessToken } = useAuthStore();
+  const isLoggedIn = !!accessToken;
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/login', { replace: true });
+    }
+  }, [isLoggedIn, navigate]);
 
   const defaultDate = new Date().toISOString().slice(0, 10);
   const defaultTime = getCurrentTimeSlot();
