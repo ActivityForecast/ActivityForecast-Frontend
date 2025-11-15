@@ -15,23 +15,34 @@ function getLocationName(sel) {
   return sel?.name || sel?.label || sel?.city || sel?.address || '선택한 위치';
 }
 
-const toISODateTimeFromYMD = (ymd) => `${ymd}T14:30:00`;
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const toISODateTime = (ymd, time) => {
+  const [h = '15', m = '00'] = (time || '15:00').split(':');
+  const hh = pad2(h);
+  const mm = pad2(m);
+  return new Date(`${ymd}T${hh}:${mm}:00`).toISOString();
+};
 
 export default function DetailPage() {
   const [openAdded, setOpenAdded] = useState(false);
   const [params] = useSearchParams();
-  const date = params.get('date') || new Date().toISOString().slice(0, 10);
+
+  const defaultDate = new Date().toISOString().slice(0, 10);
+  const date = params.get('date') || defaultDate;
+  const time = params.get('time') || '15:00';
 
   const { selected, setSelected } = useLocationStore();
   useEffect(() => {
     if (!selected) setSelected(DEFAULT_LOCATION);
   }, [selected, setSelected]);
 
-  const { isLoading, error, data } = useWeather(date);
-  const uiWeather = useMemo(
-    () => (data ? mapWeatherToCard(data) : null),
-    [data]
-  );
+  const { isLoading, error, data } = useWeather(date, time);
+ const uiWeather = useMemo(
+  () => (data ? mapWeatherToCard(data, date) : null),
+  [data, date]
+);
+
 
   const locName = getLocationName(selected);
   const [recActivities, setRecActivities] = useState([]);
@@ -60,7 +71,7 @@ export default function DetailPage() {
           DEFAULT_LOCATION?.locationName ||
           DEFAULT_LOCATION?.name;
 
-        const targetDatetime = toISODateTimeFromYMD(date);
+        const targetDatetime = toISODateTime(date, time);
 
         const list = await fetchMainRecommendationsForCards({
           locationName,
@@ -80,7 +91,7 @@ export default function DetailPage() {
     };
 
     fetchRecs();
-  }, [selected, date,retryCount]);
+  }, [selected, date, time, retryCount]);
 
   const [activeId, setActiveId] = useState(null);
   const active = recActivities.find((a) => a.id === activeId) || null;
@@ -128,9 +139,9 @@ export default function DetailPage() {
               입니다.
             </p>
           ) : (
-            <p className="mt-4 text-lg text-gray-600">
-              표시할 날씨 정보가 없습니다.
-            </p>
+            <div className="mx-auto w-full max-w-[480px] text-center h-60 rounded-md border border-gray-200 flex flex-col items-center justify-center text-sm text-gray-600">
+            표시할 날씨 정보가 없습니다. <span className='mt-5'>활동예보는 3시간 예보에 맞춰 가장 가까운 시간으로 자동 조정됩니다. <br/> 오후 9시 이후 당일 날씨는 안 보여질 수 있습니다.</span>
+          </div>
           )}
 
           {uiWeather && (
@@ -202,10 +213,7 @@ export default function DetailPage() {
                 ...mergedActive,
                 gears: mergedActive?.gears || ['운동화', '물병'],
                 notes:
-                  mergedActive?.notes || [
-                    '충분한 스트레칭',
-                    '수분 보충',
-                  ],
+                  mergedActive?.notes || ['충분한 스트레칭', '수분 보충'],
               }}
               weather={uiWeather}
               onBack={handleBack}

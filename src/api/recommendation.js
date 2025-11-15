@@ -1,3 +1,4 @@
+import { getActivityImage } from 'constants/activityImages';
 import { api } from './axios'; 
 
 
@@ -12,7 +13,7 @@ export async function fetchMainRecommendationsForCards({ locationName, targetDat
   return (data || []).map((item) => ({
     id: String(item.activityId),              
     label: item.activityName,      
-    src: item.imageUrl,
+    src: item.imageUrl || getActivityImage(item.activityName, item.categoryName),
     raw: item,                               
   }));
 }

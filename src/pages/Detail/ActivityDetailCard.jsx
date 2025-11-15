@@ -51,7 +51,7 @@ export default function ActivityDetailCard({
 
       <div className="p-6 h-full grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <div className="overflow-hidden rounded-xl">
+          <div className="overflow-hidden rounded-xl h-[160px] sm:h-[200px]">
             <img
               src={activity.src}
               alt={activity.label}

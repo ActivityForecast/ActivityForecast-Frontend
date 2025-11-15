@@ -20,15 +20,25 @@ const addDays = (d, n) => {
   return x;
 };
 
-const toISODateTimeFromYMD = (ymd) =>
-  new Date(`${ymd}T14:30:00`).toISOString();
+const toISODateTime = (ymd, time) => {
+  const [h = '14', m = '30'] = (time || '15:00').split(':');
+  const hh = pad2(h);
+  const mm = pad2(m);
+  return new Date(`${ymd}T${hh}:${mm}:00`).toISOString();
+};
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { accessToken, isLoading } = useAuthStore();
   const isLoggedIn = !!accessToken;
 
-  const [pickedDate, setPickedDate] = useState(() => toYMD(new Date()));
+  const [picked, setPicked] = useState(() => ({
+    date: toYMD(new Date()),
+    time: '15:00',
+  }));
+  const pickedDate = picked.date;
+  const pickedTime = picked.time;
+
   const minDate = toYMD(new Date()); // 오늘
   const maxDate = toYMD(addDays(new Date(), 4)); // +4일(5일까지)
 
@@ -38,12 +48,12 @@ export default function HomePage() {
     isLoading: wxLoading,
     error: wxError,
     data: todayRes,
-  } = useWeather(pickedDate);
+  } = useWeather(pickedDate, pickedTime);
 
-  const uiWeather = useMemo(
-    () => (todayRes ? mapWeatherToCard(todayRes) : null),
-    [todayRes]
-  );
+const uiWeather = useMemo(
+  () => (todayRes ? mapWeatherToCard(todayRes, pickedDate) : null),
+  [todayRes, pickedDate]
+);
 
   const [openCalendar, setOpenCalendar] = useState(false);
 
@@ -53,10 +63,12 @@ export default function HomePage() {
 
   const handleOpenCalendar = () => setOpenCalendar(true);
   const handleCloseCalendar = () => setOpenCalendar(false);
-  const handleApplyDate = (dateStr) => {
-    setPickedDate(dateStr);
+
+  const handleApplyDate = ({ date, time }) => {
+    setPicked({ date, time });
     setOpenCalendar(false);
   };
+
   const handleLoginClick = () => navigate('/login');
 
   useEffect(() => {
@@ -78,12 +90,12 @@ export default function HomePage() {
       setRecError('');
 
       try {
-       const locationName =
+        const locationName =
           selected?.address ||
           selected?._raw?.address ||
-          selected?.addressName || 
-          selected?.fullAddress || 
-          selected?.locationName || 
+          selected?.addressName ||
+          selected?.fullAddress ||
+          selected?.locationName ||
           (selected?.region_1depth_name && selected?.region_2depth_name
             ? `${selected.region_1depth_name} ${selected.region_2depth_name}`
             : null) ||
@@ -91,7 +103,7 @@ export default function HomePage() {
           DEFAULT_LOCATION?.locationName ||
           DEFAULT_LOCATION?.name;
 
-        const targetDatetime = toISODateTimeFromYMD(pickedDate);
+        const targetDatetime = toISODateTime(pickedDate, pickedTime);
 
         const list = await fetchMainRecommendationsForCards({
           locationName,
@@ -111,7 +123,7 @@ export default function HomePage() {
     };
 
     fetchRecs();
-  }, [isLoggedIn, selected, pickedDate]);
+  }, [isLoggedIn, selected, pickedDate, pickedTime]);
 
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-8 flex items-center justify-center">
@@ -135,8 +147,8 @@ export default function HomePage() {
         ) : uiWeather ? (
           <WeatherCard weather={uiWeather} />
         ) : (
-          <div className="mx-auto w-full max-w-[480px] h-60 rounded-md border border-gray-200 flex items-center justify-center text-sm text-gray-600">
-            표시할 날씨 정보가 없습니다.
+          <div className="mx-auto w-full max-w-[480px] text-center h-60 rounded-md border border-gray-200 flex flex-col items-center justify-center text-sm text-gray-600">
+            표시할 날씨 정보가 없습니다. <span className='mt-5'>활동예보는 3시간 예보에 맞춰 가장 가까운 시간으로 자동 조정됩니다. <br/> 오후 9시 이후 당일 날씨는 안 보여질 수 있습니다.</span>
           </div>
         )}
 
@@ -199,7 +211,11 @@ export default function HomePage() {
 
               <div className="mt-8 flex gap-4">
                 <Button
-                  onClick={() => navigate(`/detail?date=${pickedDate}`)}
+                  onClick={() =>
+                    navigate(
+                      `/detail?date=${pickedDate}&time=${pickedTime}`
+                    )
+                  }
                   size="w-[240px] h-[56px]"
                   className="text-sm sm:text-base"
                 >
@@ -220,6 +236,7 @@ export default function HomePage() {
         <CalendarModal
           isOpen={openCalendar}
           initialDate={pickedDate}
+          initialTime={pickedTime}
           onApply={handleApplyDate}
           onClose={handleCloseCalendar}
           min={minDate}
