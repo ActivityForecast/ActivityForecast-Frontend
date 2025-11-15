@@ -106,9 +106,9 @@ export function useWeather(dateYmd, time) {
         if (normalized) {
           try {
             const aq = await getAirQuality(coords, { signal: ac.signal });
-            const overall =
-              aq?.overallAirQualityKorean || aq?.airQualityStatusKorean;
-            normalized.airQuality = overall;
+            normalized.airQualityStatusKorean = aq?.airQualityStatusKorean;
+            normalized.overallAirQualityKorean = aq?.overallAirQualityKorean;
+            normalized.airQuality = aq?.airQualityStatusKorean || aq?.overallAirQualityKorean;
             normalized.airQualityIndex = aq?.airQualityIndex;
           } catch (e) {
           }
