@@ -23,6 +23,7 @@ import 번지점프 from 'assets/images/activities/번지점프.svg';
 
 import 볼링 from 'assets/images/activities/볼링.svg';
 import 비치발리볼 from 'assets/images/activities/비치발리볼.svg';
+import 사이클링 from 'assets/images/activities/사이클링.svg'
 import 산악자전거 from 'assets/images/activities/산악자전거.svg';
 import 서킷트레이닝 from 'assets/images/activities/서킷트레이닝.svg';
 import 서핑 from 'assets/images/activities/서핑.svg';
@@ -71,6 +72,7 @@ import 탁구 from 'assets/images/activities/탁구.svg';
 import 태보 from 'assets/images/activities/태보.svg';
 import 테니스 from 'assets/images/activities/테니스.svg';
 import 트램폴린점프 from 'assets/images/activities/트램폴린점프.svg';
+import 트레킹 from 'assets/images/activities/트레킹.svg'
 import 파워리프팅 from 'assets/images/activities/파워리프팅.svg';
 import 파워워킹 from 'assets/images/activities/파워워킹.svg';
 import 팔굽혀펴기 from 'assets/images/activities/팔굽혀펴기.svg';
@@ -99,8 +101,8 @@ const activityImageMap = {
   마라톤,
   하이킹,
   등산,
-  트레킹: 하이킹,
-  사이클링: 산악자전거,
+  트레킹,
+  사이클링,
   수영,
   로잉,
   스텝퍼: 헬스,
