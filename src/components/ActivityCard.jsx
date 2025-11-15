@@ -12,11 +12,15 @@ export default function ActivityCard({
   const sizeMap = {
     md: {
       wrapper: 'w-[96px] sm:w-[120px]',
+      imageBox:
+        'w-full h-[80px] sm:h-[140px] bg-gray-100 flex items-center justify-center',
       label:
         'mt-2 text-center text-base sm:text-lg font-semibold text-gray-800',
     },
     lg: {
       wrapper: 'w-[160px] sm:w-[200px]',
+      imageBox:
+        'w-full h-[120px] sm:h-[160px] bg-gray-100 flex items-center justify-center',
       label: 'mt-3 text-center text-xl font-semibold text-gray-800',
     },
   };
