@@ -84,6 +84,8 @@ export default function ActivityDetailCard({
                 {comfortBadge}
               </span>
             </div>
+
+{/* 준비물은 따로 데이터가 준비된게 api에서 없어보여서 주석처리 하겠습니다.
             <div className="text-lg font-semibold text-gray-900 mb-3">
               준비물
             </div>
@@ -98,10 +100,13 @@ export default function ActivityDetailCard({
                 </span>
               ))}
             </div>
+            */}
           </div>
 
           <div className="mt-5 rounded-2xl border border-gray-200 p-5">
-            <div className="text-lg font-semibold text-gray-900 mb-3">날씨</div>
+            <div className="text-lg font-semibold text-gray-900 mb-3">
+              날씨
+            </div>
             {weather ? (
               <div>
                 <div className="text-4xl font-semibold">

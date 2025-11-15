@@ -3,23 +3,19 @@ import { useSearchParams } from 'react-router-dom';
 import ActivityCard from 'components/ActivityCard';
 import ActivityDetailCard from './ActivityDetailCard';
 import Button from 'components/Button';
-import { recommendedActivities } from 'mocks/Activities';
 import { useLocationStore } from 'stores/location';
 import { DEFAULT_LOCATION } from 'constants/defaultLocation';
 import { useWeather } from 'hooks/useWeather';
 import { mapWeatherToCard } from 'utils/mapWeatherToCard';
 import { formatMd } from 'utils/formatMd';
 import CalendarAddedModal from './CalendarModal';
-
-const ACTIVITY_DETAILS = {
-  soccer: { difficulty: 3, comfortPercent: 80 },
-  running: { difficulty: 2, comfortPercent: 75 },
-  basketball: { difficulty: 4, comfortPercent: 62 },
-};
+import { fetchMainRecommendationsForCards } from 'api/recommendation';
 
 function getLocationName(sel) {
   return sel?.name || sel?.label || sel?.city || sel?.address || '선택한 위치';
 }
+
+const toISODateTimeFromYMD = (ymd) => `${ymd}T14:30:00`;
 
 export default function DetailPage() {
   const [openAdded, setOpenAdded] = useState(false);
@@ -38,17 +34,76 @@ export default function DetailPage() {
   );
 
   const locName = getLocationName(selected);
+  const [recActivities, setRecActivities] = useState([]);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (!selected) return;
+
+    const fetchRecs = async () => {
+      setRecLoading(true);
+      setRecError('');
+
+      try {
+        const locationName =
+          selected?.address ||
+          selected?._raw?.address ||
+          selected?.addressName ||
+          selected?.fullAddress ||
+          selected?.locationName ||
+          (selected?.region_1depth_name && selected?.region_2depth_name
+            ? `${selected.region_1depth_name} ${selected.region_2depth_name}`
+            : null) ||
+          DEFAULT_LOCATION?.address ||
+          DEFAULT_LOCATION?.locationName ||
+          DEFAULT_LOCATION?.name;
+
+        const targetDatetime = toISODateTimeFromYMD(date);
+
+        const list = await fetchMainRecommendationsForCards({
+          locationName,
+          targetDatetime,
+        });
+
+        setRecActivities(list);
+      } catch (e) {
+        console.error(e);
+        const msg =
+          e?.response?.data?.message ||
+          '추천 활동을 불러오는 데 실패했어요.';
+        setRecError(msg);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+
+    fetchRecs();
+  }, [selected, date,retryCount]);
 
   const [activeId, setActiveId] = useState(null);
-  const active = recommendedActivities.find((a) => a.id === activeId) || null;
+  const active = recActivities.find((a) => a.id === activeId) || null;
 
-  const mergedActive = activeId
-    ? { ...active, ...(ACTIVITY_DETAILS[activeId] || {}) }
+  const mergedActive = active
+    ? {
+        ...active,
+        difficulty:
+          active.raw && typeof active.raw.difficultyLevel === 'number'
+            ? active.raw.difficultyLevel
+            : 3,
+        comfortPercent:
+          active.raw && typeof active.raw.comfortScore === 'number'
+            ? Math.round(active.raw.comfortScore * 100)
+            : null,
+      }
     : null;
 
   const handleCardClick = (id) => setActiveId(id);
   const handleBack = () => setActiveId(null);
-  const handleRetry = () => alert('현재 다른 추천 미구현입니다.');
+  const handleRetry = () => {
+    setRetryCount((c) => c + 1);
+  };
   const handleCalendar = () => {
     setOpenAdded(true);
   };
@@ -67,8 +122,8 @@ export default function DetailPage() {
             </p>
           ) : uiWeather ? (
             <p className="mt-4 text-lg text-gray-700">
-              {formatMd(date)} <span className="font-semibold">{locName}</span>
-              의 날씨는{' '}
+              {formatMd(date)}{' '}
+              <span className="font-semibold">{locName}</span>의 날씨는{' '}
               <span className="font-semibold">{uiWeather.conditionText}</span>
               입니다.
             </p>
@@ -100,17 +155,35 @@ export default function DetailPage() {
           {!activeId && (
             <>
               <div className="mt-8">
-                <div className="mx-auto flex gap-2 justify-between max-w-[900px]">
-                  {recommendedActivities.map((act) => (
-                    <ActivityCard
-                      key={act.id}
-                      src={act.src}
-                      label={act.label}
-                      size="lg"
-                      onClick={() => handleCardClick(act.id)}
-                    />
-                  ))}
-                </div>
+                {recLoading && (
+                  <p className="mt-4 text-sm text-gray-500">
+                    오늘의 추천 활동을 불러오는 중이에요...
+                  </p>
+                )}
+
+                {recError && !recLoading && (
+                  <p className="mt-4 text-sm text-red-500">{recError}</p>
+                )}
+
+                {!recLoading && !recError && recActivities.length === 0 && (
+                  <p className="mt-4 text-sm text-gray-500">
+                    아직 추천할 활동이 없어요. 위치를 다시 선택해 보세요.
+                  </p>
+                )}
+
+                {!recLoading && recActivities.length > 0 && (
+                  <div className="mx-auto flex gap-2 justify-between max-w-[900px]">
+                    {recActivities.map((act) => (
+                      <ActivityCard
+                        key={act.id}
+                        src={act.src}
+                        label={act.label}
+                        size="lg"
+                        onClick={() => handleCardClick(act.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               <Button
@@ -128,13 +201,18 @@ export default function DetailPage() {
               activity={{
                 ...mergedActive,
                 gears: mergedActive?.gears || ['운동화', '물병'],
-                notes: mergedActive?.notes || ['충분한 스트레칭', '수분 보충'],
+                notes:
+                  mergedActive?.notes || [
+                    '충분한 스트레칭',
+                    '수분 보충',
+                  ],
               }}
               weather={uiWeather}
               onBack={handleBack}
               onCalendar={handleCalendar}
             />
           )}
+
           <CalendarAddedModal
             isOpen={openAdded}
             onClose={() => setOpenAdded(false)}
