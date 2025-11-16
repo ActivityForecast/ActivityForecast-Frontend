@@ -234,6 +234,7 @@ export default function HomePage() {
                 <Button
                   onClick={handleOpenCalendar}
                   size="w-[240px] h-[56px]"
+                  styleType="outlined"
                   className="text-sm sm:text-base"
                 >
                   다른 날짜 고르기
