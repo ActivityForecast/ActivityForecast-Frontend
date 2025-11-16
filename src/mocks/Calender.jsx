@@ -134,6 +134,7 @@ export default function CalendarBox({
       className={`${
         inline ? 'relative' : 'fixed'
       } bg-white ${wrapCls} ${cardPad} ${className}`}
+      style={isMini ? { borderColor: accent } : undefined}
     >
       {/* 헤더 */}
       <div className="flex items-center justify-between">

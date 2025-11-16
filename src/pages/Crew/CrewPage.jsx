@@ -11,7 +11,7 @@ import activities from 'constants/activities';
 
 export default function CrewPage() {
   const { user } = useAuthStore();
-  const { myCrews, loadMyCrews, addCrew, removeMember, loadAllCrewSchedules, addCrewSchedule } = useCrewStore();
+  const { myCrews, loadMyCrews, addCrew, removeMember, loadAllCrewSchedules, addCrewSchedule, joinByCode } = useCrewStore();
   
   // 전체 크루 일정 상태
   const [allCrewSchedules, setAllCrewSchedules] = useState([]);
@@ -78,6 +78,10 @@ export default function CrewPage() {
   const [crewName, setCrewName] = useState("");
   const [crewMax, setCrewMax] = useState("");
 
+  //  가입 모달
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+
   //  탈퇴 완료 모달
   const [leaveTargetId, setLeaveTargetId] = useState(null);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
@@ -89,36 +93,72 @@ export default function CrewPage() {
   const handleShare = async (crew) => {
     const code = crew.inviteCode;
     if (!code) return;
-    const url = `${window.location.origin}/crew/join?code=${encodeURIComponent(code)}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(code);
     } catch (_) {}
-    setShareUrl(url);
+    setShareUrl(code);
     setShareOpen(true);
   };
 
-  // 캘린더 이벤트를 CalendarBox 형식으로 변환
+  // 캘린더 이벤트를 CalendarBox 형식으로 변환 (모든 크루 일정 집계)
   const calendarEvents = useMemo(() => {
     return (allCrewSchedules || []).map((schedule) => {
       const scheduleDate = schedule.scheduleDate || schedule.date;
-      const dateStr = scheduleDate ? (typeof scheduleDate === 'string' ? scheduleDate.split('T')[0] : scheduleDate) : '';
+      const dateStr = scheduleDate
+        ? (typeof scheduleDate === 'string' ? scheduleDate.split('T')[0] : scheduleDate)
+        : '';
+
+      // 시간 HH:mm 추출 (백엔드가 scheduleDate만 줄 때 대비)
+      const timeFromScheduleDate = (() => {
+        const sd = schedule.scheduleDate || schedule.dateTime || schedule.datetime;
+        if (typeof sd === 'string' && sd.includes('T')) {
+          const hhmm = sd.split('T')[1]?.slice(0, 5);
+          return hhmm && /^\d{2}:\d{2}$/.test(hhmm) ? hhmm : undefined;
+        }
+        return undefined;
+      })();
+
+      // 활동명 매핑(백엔드가 id를 주면 상수에서 매핑, 다음으로 문자열 키)
+      const activityNameFromId = (() => {
+        const id =
+          schedule.activityId ||
+          (schedule.activity && (schedule.activity.id || schedule.activity.activityId)) ||
+          schedule.activityID ||
+          schedule.activity_id;
+        if (!id) return undefined;
+        const found = activities.find((a) => String(a.id) === String(id));
+        return found?.name;
+      })();
+
+      const activityText =
+        activityNameFromId ||
+        (typeof schedule.activity === 'string' && schedule.activity) ||
+        (schedule.activity && typeof schedule.activity.name === 'string' && schedule.activity.name) ||
+        (typeof schedule.activityName === 'string' && schedule.activityName) ||
+        (typeof schedule.activityLabel === 'string' && schedule.activityLabel) ||
+        (typeof schedule.activity_label === 'string' && schedule.activity_label) ||
+        '';
+
+      const crew = safeCrews.find(c => c.id === (schedule.crewId ?? schedule.crew?.id));
+
       return {
         date: dateStr,
-        label: schedule.activity || schedule.activityName || '활동',
-        activity: schedule.activity || schedule.activityName,
-        place: schedule.locationAddress || schedule.place,
-        time: schedule.time || schedule.startTime,
-        gear: schedule.equipmentList || schedule.gear,
-        crewScheduleId: schedule.crewScheduleId || schedule.id,
-        crewId: schedule.crewId,
-        crewName: safeCrews.find(c => c.id === schedule.crewId)?.name || '크루',
-        crewColor: safeCrews.find(c => c.id === schedule.crewId)?.color || '#83C8FC',
+        label: activityText || (typeof schedule.label === 'string' ? schedule.label : '') || '활동',
+        activity: activityText,
+        place: schedule.locationAddress || schedule.place || schedule.location,
+        time: schedule.time || schedule.startTime || timeFromScheduleDate,
+        gear: schedule.equipmentList || schedule.gear || schedule.equipment,
+        crewScheduleId: schedule.crewScheduleId || schedule.id || schedule.scheduleId,
+        crewId: schedule.crewId ?? schedule.crew?.id,
+        crewName: crew?.name || '크루',
+        crewColor: crew?.color || '#83C8FC',
       };
     });
   }, [allCrewSchedules, safeCrews]);
 
   // 날짜 클릭 핸들러
   const handleDateClick = (date, dayEvents) => {
+    console.log('top calendar click', date, dayEvents);
     if (dayEvents && dayEvents.length > 0) {
       setSelectedDateEvents(dayEvents);
       setSelectedDate(date);
@@ -155,29 +195,22 @@ export default function CrewPage() {
       const timeStr = data.time || '12:00';
       const [hour, minute] = timeStr.split(':').map(Number);
 
+      console.log('선택된 시간:', timeStr, '→ hour:', hour, 'minute:', minute);
+
       if (isNaN(hour) || isNaN(minute)) {
         alert('시간 형식이 올바르지 않습니다.');
         return;
       }
 
-      // locationId가 유효하지 않으면 null로 설정
-      const locId = data.locationId;
-      const validLocationId = (typeof locId === 'number' && locId > 0) ? locId : null;
-      
+      // Swagger 스펙에 맞는 요청 바디 형식 (time은 HH:mm:ss 문자열)
       const schedulePayload = {
         activityId: activityId,
         date: data.date,
-        time: {
-          hour: hour,
-          minute: minute,
-          second: 0,
-          nano: 0,
-        },
+        time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`,
         equipmentList: data.gear || '',
-        locationId: validLocationId,
-        locationAddress: data.place && data.place.trim() ? data.place.trim() : null,
-        locationLatitude: data.locationLatitude || null,
-        locationLongitude: data.locationLongitude || null,
+        locationAddress: data.place && data.place.trim() ? data.place.trim() : '',
+        locationLatitude: data.locationLatitude || 0,
+        locationLongitude: data.locationLongitude || 0,
       };
 
       const created = await addCrewSchedule(crewId, schedulePayload);
@@ -249,6 +282,30 @@ export default function CrewPage() {
     }
   };
 
+  //  크루 가입 로직
+  const handleJoinCrew = async () => {
+    const code = (joinCode || '').trim();
+    if (!code) return alert('초대 코드를 입력해주세요.');
+    try {
+      const res = await joinByCode(code);
+      if (res === null) {
+        alert('가입에 실패했습니다. 코드를 확인해 주세요.');
+        return;
+      }
+      await loadMyCrews();
+      setJoinCode('');
+      setJoinOpen(false);
+      alert('크루에 가입되었습니다.');
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        '가입 중 오류가 발생했습니다.';
+      alert(msg);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative">
       <div
@@ -266,7 +323,7 @@ export default function CrewPage() {
         "
       >
         {/*  상단 버튼 */}
-        <div className="w-full flex justify-center">
+        <div className="w-full flex justify-center gap-3">
           <Button
             type="button"
             styleType="solid"
@@ -275,6 +332,15 @@ export default function CrewPage() {
             onClick={() => setIsModalOpen(true)}
           >
             크루 생성 +
+          </Button>
+          <Button
+            type="button"
+            styleType="solid"
+            size="py-3.5 w-[200px] text-md"
+            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[50px] shadow-md transition-all duration-200"
+            onClick={() => setJoinOpen(true)}
+          >
+            크루 가입
           </Button>
         </div>
 
@@ -335,6 +401,7 @@ export default function CrewPage() {
             inline 
             size="xl" 
             wide 
+            accent="#111827"
             events={calendarEvents}
             onDateClick={handleDateClick}
           />
@@ -406,6 +473,36 @@ export default function CrewPage() {
       </Modal>
       </div>
 
+      {/* 크루 가입 모달 */}
+      <div style={{ '--modal-w-sm': '520px' }}>
+      <Modal
+        isOpen={joinOpen}
+        onClose={() => setJoinOpen(false)}
+        title="크루 가입"
+      >
+        <div className="flex flex-col gap-4 mt-4">
+          <label className="font-semibold text-lg text-black">초대 코드</label>
+          <InputField
+            id="inviteCode"
+            type="text"
+            placeholder="초대 코드를 입력하세요"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value)}
+          />
+          <ModalFooter>
+            <Button
+              type="button"
+              styleType="solid"
+              onClick={handleJoinCrew}
+              className="bg-[#3B82F6] text-white rounded-xl mt-2"
+            >
+              가입하기
+            </Button>
+          </ModalFooter>
+        </div>
+      </Modal>
+      </div>
+
       {/* 공유 완료 모달 */}
       <div style={{ '--modal-w-sm': '520px' }}>
       <Modal
@@ -416,8 +513,8 @@ export default function CrewPage() {
         title=""
       >
         <div className="text-center py-6">
-          <div className="text-lg font-semibold">공유를 위한 링크가 복사되었습니다!</div>
-          <div className="mt-3 text-xs sm:text-sm text-gray-400 break-all">{shareUrl || 'http://…'}</div>
+          <div className="text-lg font-semibold">초대 코드가 복사되었습니다!</div>
+          <div className="mt-3 text-xs sm:text-sm text-gray-400 break-all">{shareUrl || '--------'}</div>
         </div>
         <ModalFooter>
           <button
@@ -462,10 +559,10 @@ export default function CrewPage() {
                   </div>
                   <div className="font-semibold text-lg text-black">{event.activity || event.label}</div>
                   {event.place && (
-                    <div className="text-sm text-gray-600 mt-1">📍 {event.place}</div>
+                    <div className="text-sm text-gray-600 mt-1">장소 : {event.place}</div>
                   )}
                   {event.gear && (
-                    <div className="text-sm text-gray-500 mt-1">🎒 {event.gear}</div>
+                    <div className="text-sm text-gray-500 mt-1">준비물 : {event.gear}</div>
                   )}
                 </div>
               ))}

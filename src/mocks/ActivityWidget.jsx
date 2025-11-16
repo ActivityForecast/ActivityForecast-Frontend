@@ -12,11 +12,11 @@ export default function ActivityWidget({
   withBorder = true,
   gapClass = "gap-44",
 }) {
-  const size = 160;
+  const size = 140;
   const cx = size / 2;
   const cy = size / 2;
-  const innerRadius = 32; // 두께 UP
-  const outerRadius = 64; // 두께 UP
+  const innerRadius = 28;
+  const outerRadius = 56;
   const gapDeg = 1.5;
 
   // ✅ 조각 정보 계산
@@ -56,13 +56,13 @@ export default function ActivityWidget({
 
   const leader = (angleDeg) => {
     const rad = (Math.PI / 180) * angleDeg;
-    const r = outerRadius + 6;
+    const r = outerRadius + 4;
     const x0 = cx + r * Math.cos(rad);
     const y0 = cy + r * Math.sin(rad);
-    const x1 = cx + (r + 14) * Math.cos(rad);
-    const y1 = cy + (r + 14) * Math.sin(rad);
+    const x1 = cx + (r + 10) * Math.cos(rad);
+    const y1 = cy + (r + 10) * Math.sin(rad);
     const isRight = Math.cos(rad) >= 0;
-    const x2 = x1 + (isRight ? 12 : -12);
+    const x2 = x1 + (isRight ? 10 : -10);
     const y2 = y1;
     return { x0, y0, x1, y1, x2, y2, isRight };
   };
@@ -112,18 +112,20 @@ export default function ActivityWidget({
           {/* ✅ 보조선 + 숫자도 크루 색상으로 통일 */}
           {segs.map((s, i) => {
             const { x0, y0, x1, y1, x2, y2, isRight } = leader(s.mid);
+            const labelText = `${s.label ?? ''} ${s.count}회`;
             return (
-              <g key={`lbl-${i}`} stroke={accent} fill={accent}>
-                <line x1={x0} y1={y0} x2={x1} y2={y1} strokeWidth="1.5" />
-                <line x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1.5" />
+              <g key={`lbl-${i}`}>
+                <line x1={x0} y1={y0} x2={x1} y2={y1} stroke={accent} strokeWidth="1.5" />
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={accent} strokeWidth="1.5" />
                 <text
                   x={x2 + (isRight ? 4 : -4)}
                   y={y2 - 2}
                   textAnchor={isRight ? "start" : "end"}
-                  fontSize="12"
+                  fontSize="11"
                   fontWeight="600"
+                  fill={accent}
                 >
-                  {s.count}
+                  {labelText}
                 </text>
               </g>
             );
