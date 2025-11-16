@@ -314,7 +314,13 @@ export default function CrewScheduleFormModal({
       <CalendarModal
         isOpen={openDatePickerModal}
         onClose={() => setOpenDatePickerModal(false)}
-        initialDate={date ? date.split('T')[0] : undefined}
+        initialDate={
+          date
+            ? (typeof date === 'string'
+                ? date.split('T')[0]
+                : new Date(date).toISOString().split('T')[0])
+            : undefined
+        }
         title="날짜를 선택해주세요"
         onApply={(selectedDate) => {
           setDate(selectedDate);

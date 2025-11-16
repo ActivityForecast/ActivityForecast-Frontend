@@ -3,8 +3,13 @@ import { useLocationStore } from 'stores/location';
 import { getTodaySummary, getForecast, getAirQuality } from 'api/weather';
 import { locationShape } from 'utils/locationShape';
 
-const toYMD = (d) => d.toISOString().slice(0, 10);
-const ymdDiff = (a, b) => Math.floor((new Date(a) - new Date(b)) / 86400000);
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const toLocalYMD = (d) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+const ymdDiff = (a, b) =>
+  Math.floor((new Date(a).getTime() - new Date(b).getTime()) / 86400000);
 
 function normalizeForecastItem(it) {
   if (!it) return null;
@@ -27,7 +32,7 @@ function normalizeForecastItem(it) {
   };
 }
 
-export function useWeather(dateYmd) {
+export function useWeather(dateYmd, time) {
   const { selected } = useLocationStore();
   const coords = useMemo(() => locationShape(selected), [selected]);
 
@@ -41,52 +46,84 @@ export function useWeather(dateYmd) {
     if (!coords || !dateYmd) return;
 
     const ac = new AbortController();
+
     (async () => {
       setState({ isLoading: true, error: null, data: null });
 
       try {
-        const today = toYMD(new Date());
+        const today = toLocalYMD(new Date());
         const diff = ymdDiff(dateYmd, today);
 
-        if (diff <= 0) {
+        const [hStr] = String(time || '').split(':');
+        const parsed = parseInt(hStr, 10);
+        const targetHour = Number.isFinite(parsed) ? parsed : 12;
+
+        if (diff < 0) {
           const res = await getTodaySummary(coords, { signal: ac.signal });
           setState({ isLoading: false, error: null, data: res });
-        } else {
-          const res = await getForecast(coords, { signal: ac.signal });
-          const list = res?.data?.list || res?.list || [];
-          const target = list
-            .filter((x) => {
-              const s = x.dt_txt || x.dateTime || x.datetime || '';
-              return typeof s === 'string' && s.startsWith(dateYmd);
-            })
-            .sort((a, b) => {
-              const ah = new Date(
-                a.dt_txt || a.dateTime || a.datetime
-              ).getHours();
-              const bh = new Date(
-                b.dt_txt || b.dateTime || b.datetime
-              ).getHours();
-              return Math.abs(12 - ah) - Math.abs(12 - bh);
-            })[0];
+          return;
+        }
 
-          const normalized = normalizeForecastItem(target);
+        const res = await getForecast(coords, { signal: ac.signal });
+        const list = res?.data?.list || res?.list || [];
+
+        const withLocal = list
+          .map((item) => {
+            const dtSec = item.dt;
+            if (dtSec === undefined || dtSec === null) return null;
+
+            const local = new Date(dtSec * 1000); 
+            return {
+              item,
+              localYmd: toLocalYMD(local),
+              localHour: local.getHours(),
+              local,
+            };
+          })
+          .filter(Boolean)
+          .filter((x) => x.localYmd === dateYmd);
+
+        if (withLocal.length === 0) {
+          setState({ isLoading: false, error: null, data: null });
+          return;
+        }
+
+        let picked = withLocal.find((x) => x.localHour === targetHour);
+
+        if (!picked) {
+          withLocal.sort(
+            (a, b) =>
+              Math.abs(a.localHour - targetHour) -
+              Math.abs(b.localHour - targetHour)
+          );
+          picked = withLocal[0];
+        }
+
+        const target = picked.item;
+
+        const normalized = normalizeForecastItem(target);
+
+        if (normalized) {
           try {
             const aq = await getAirQuality(coords, { signal: ac.signal });
-            const overall =
-              aq?.overallAirQualityKorean || aq?.airQualityStatusKorean;
-            normalized.airQuality = overall;
+            normalized.airQualityStatusKorean = aq?.airQualityStatusKorean;
+            normalized.overallAirQualityKorean = aq?.overallAirQualityKorean;
+            normalized.airQuality = aq?.airQualityStatusKorean || aq?.overallAirQualityKorean;
             normalized.airQualityIndex = aq?.airQualityIndex;
-          } catch (_) {}
-          setState({ isLoading: false, error: null, data: normalized });
+          } catch (e) {
+          }
         }
+
+        setState({ isLoading: false, error: null, data: normalized });
       } catch (e) {
-        if (!ac.signal.aborted)
+        if (!ac.signal.aborted) {
           setState({ isLoading: false, error: e, data: null });
+        }
       }
     })();
 
     return () => ac.abort();
-  }, [coords, dateYmd]);
+  }, [coords, dateYmd, time]);
 
   return state;
 }
