@@ -228,75 +228,43 @@ export default function CrewListItem({
         title="새 일정 만들기"
         color={color}
         onSave={async (data) => {
-          if (!id) {
-            alert('크루 정보를 찾을 수 없습니다.');
-            return;
-          }
-          
+          if (!id) return alert('크루 정보를 찾을 수 없습니다.');
+          // activityId 단순 매핑(이름 → 숫자 ID)
+          const matched = activities.find((a) => a.name === data.activity);
+          if (!matched) return alert('활동을 찾을 수 없습니다.');
+          const activityId = Number(matched.id);
+          if (!data?.date) return alert('날짜를 선택해주세요.');
+
+          // 시간 파싱(HH:mm), 기본값 12:00
+          const [h, m] = (data.time || '12:00').split(':').map(Number);
+          if (Number.isNaN(h) || Number.isNaN(m)) return alert('시간 형식이 올바르지 않습니다.');
+
+          // Swagger RequestBody 최소 필드로 단순화
+          const payload = {
+            activityId,
+            date: data.date, // YYYY-MM-DD
+            time: { hour: h, minute: m, second: 0, nano: 0 },
+            equipmentList: data.gear || '',
+            locationAddress: (data.place || '').trim(),
+            locationLatitude: Number(data.locationLatitude) || 0,
+            locationLongitude: Number(data.locationLongitude) || 0,
+          };
+
           try {
-            // 활동 ID 찾기 (activities에서 activity 이름으로 찾기)
-            const activityObj = activities.find((a) => a.name === data.activity);
-            if (!activityObj) {
-              alert('활동을 찾을 수 없습니다.');
-              return;
-            }
-            const activityId = parseInt(activityObj.id, 10);
-            
-            if (!data.date) {
-              alert('날짜를 선택해주세요.');
-              return;
-            }
-            
-            // 시간 문자열을 객체로 변환 (HH:mm 형식)
-            const timeStr = data.time || '12:00';
-            const [hour, minute] = timeStr.split(':').map(Number);
-            
-            if (isNaN(hour) || isNaN(minute)) {
-              alert('시간 형식이 올바르지 않습니다.');
-              return;
-            }
-            
-            // Swagger 스펙에 맞는 요청 바디 형식
-            const locId = data.locationId;
-            const validLocationId = (typeof locId === 'number' && locId > 0) ? locId : null;
-            
-            // locationId가 유효하지 않으면 null로 설정 (백엔드에서 처리하도록)
-            const schedulePayload = {
-              activityId: activityId,
-              date: data.date, // YYYY-MM-DD 형식
-              time: {
-                hour: hour,
-                minute: minute,
-                second: 0,
-                nano: 0,
-              },
-              equipmentList: data.gear || '',
-              locationId: validLocationId,
-              locationAddress: data.place && data.place.trim() ? data.place.trim() : null,
-              locationLatitude: data.locationLatitude || null,
-              locationLongitude: data.locationLongitude || null,
-            };
-            
-            console.log('일정 생성 요청:', JSON.stringify(schedulePayload, null, 2));
-            const created = await addCrewSchedule(id, schedulePayload);
-            
-            if (created) {
-              // 일정 생성 모달 닫기
-              setOpenCreate(false);
-              // 저장된 이벤트 데이터 저장 (확인 모달용)
-              setSavedEventData(data);
-              // 캘린더 추가 확인 모달 열기
-              setOpenCalendarModal(true);
-              // 일정 목록 새로고침
-              await loadCrewSchedules(id, currentYear, currentMonth);
-            } else {
-              alert('일정 생성에 실패했습니다.');
-            }
-          } catch (error) {
-            console.error('일정 생성 오류:', error);
-            console.error('에러 응답:', error?.response?.data);
-            const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류';
-            alert(`일정 생성 중 오류가 발생했습니다: ${errorMessage}`);
+            const created = await addCrewSchedule(id, payload);
+            if (!created) return alert('일정 생성에 실패했습니다.');
+
+            setOpenCreate(false);
+            setSavedEventData(data);
+            setOpenCalendarModal(true);
+            await loadCrewSchedules(id, currentYear, currentMonth);
+          } catch (e) {
+            const msg =
+              e?.response?.data?.message ||
+              e?.response?.data?.error ||
+              e?.message ||
+              '일정 생성 중 오류가 발생했습니다.';
+            alert(msg);
           }
         }}
       />

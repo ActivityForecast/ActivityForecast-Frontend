@@ -61,6 +61,8 @@ export const useCrewStore = create((set, get) => ({
     try {
       const stats = await Crew.getCrewStatistics(crewId).catch(() => null);
       if (stats) {
+ 
+       
         set({
           statisticsByCrewId: { ...get().statisticsByCrewId, [crewId]: stats },
         });
@@ -124,6 +126,9 @@ export const useCrewStore = create((set, get) => ({
     } catch (error) {
       console.error('일정 생성 API 오류:', error);
       console.error('요청 바디:', schedulePayload);
+      console.error('에러 응답 전체:', error?.response);
+      console.error('에러 응답 데이터:', error?.response?.data);
+      console.error('에러 상태 코드:', error?.response?.status);
       throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
     }
   },

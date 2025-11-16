@@ -3,7 +3,7 @@ import Modal, { ModalFooter } from 'components/Modal/Modal';
 import InputField from 'components/InputField';
 import Button from 'components/Button';
 import CrewActivitySelectModal from 'components/CrewActivitySelectModal';
-import CalendarModal from 'pages/Home/CalendarModal';
+import CalendarModal from 'components/CrewCreativeCalenderModal';
 import LocationModal from 'components/Gnb/LocationModal';
 import activities from 'constants/activities';
 
