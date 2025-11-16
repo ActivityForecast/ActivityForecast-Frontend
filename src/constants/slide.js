@@ -5,6 +5,11 @@ import SpringImg from 'assets/images/landing/spring.svg';
 import Feature1Img from 'assets/images/landing/선호활동.png';
 import Feature2Img from 'assets/images/landing/날짜와위치.png';
 import Feature3Img from 'assets/images/landing/메인활동.png';
+import Feature4Img from 'assets/images/landing/상세활동.png';
+import Feature5Img from 'assets/images/landing/크루.png';
+import Feature6Img from 'assets/images/landing/크루일정.png';
+import Feature7Img from 'assets/images/landing/히스토리.png';
+import Feature8Img from 'assets/images/landing/활동평점.png';
 
 export const SLIDES = [
   {
@@ -38,7 +43,7 @@ export const SLIDES = [
       description: '사용자의 선호 활동과 날씨를 기준으로 활동을 추천해줘요.',
     },
     feature2: {
-      image: Feature2Img,
+      image: Feature4Img,
       label: '활동 상세',
       description: '원하는 활동의 상세 정보를 확인해봐요.',
     },
@@ -51,12 +56,12 @@ export const SLIDES = [
     title: '날씨와 활동을 잇는\n나만의 활동 서비스',
     subtitle: '선선한 계절, 오늘 할 수 있는 활동을 한눈에.',
     feature1: {
-      image: Feature1Img,
+      image: Feature5Img,
       label: '크루 서비스',
       description: '크루원들과 함께 활동을 즐길 수 있어요.',
     },
     feature2: {
-      image: Feature2Img,
+      image: Feature6Img,
       label: '공동 일정 관리',
       description: '크루 일정을 생성하고 관리해봐요.',
     },
@@ -69,12 +74,12 @@ export const SLIDES = [
     title: '날씨와 활동을 잇는\n나만의 활동 서비스',
     subtitle: '추운 날씨에도 안전하게 즐길 수 있는 활동.',
     feature1: {
-      image: Feature1Img,
+      image: Feature7Img,
       label: '히스토리 페이지',
       description: '활동했던 기록을 확인할 수 있어요.',
     },
     feature2: {
-      image: Feature2Img,
+      image: Feature8Img,
       label: '평점 관리',
       description: '활동 추천 만족도에 대한 평점을 입력해주세요.',
     },
