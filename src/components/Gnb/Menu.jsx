@@ -4,7 +4,6 @@ import { ReactComponent as CloseIcon } from 'assets/icons/close.svg';
 import { ReactComponent as HomeIcon } from 'assets/icons/home.svg';
 import { ReactComponent as CrewIcon } from 'assets/icons/crew.svg';
 import { ReactComponent as HistoryIcon } from 'assets/icons/history.svg';
-import { ReactComponent as SearchIcon } from 'assets/icons/search.svg';
 import useClickOutside from 'hooks/useClickOutside';
 import MenuLink from './MenuLink';
 
@@ -26,12 +25,6 @@ const items = [
     title: '히스토리',
     desc: '활동 기록 보기',
     Icon: HistoryIcon,
-  },
-  {
-    to: '/detail',
-    title: '상세페이지',
-    desc: '날씨에 맞는 운동 추천',
-    Icon: SearchIcon,
   },
 ];
 
