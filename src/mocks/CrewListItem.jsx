@@ -24,7 +24,7 @@ export default function CrewListItem({
   const [openCalendarModal, setOpenCalendarModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [savedEventData, setSavedEventData] = useState(null);
-  
+
   // API 연동을 위한 store
   const {
     schedulesByCrewId,
@@ -34,7 +34,7 @@ export default function CrewListItem({
     addCrewSchedule,
     removeCrewSchedule,
   } = useCrewStore();
-  
+
   // 현재 년/월 계산
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -88,13 +88,26 @@ export default function CrewListItem({
   };
   const makeCompositeKey = (dateYmd, timeHmm, placeName) =>
     `d:${dateYmd}|t:${timeHmm}|p:${(placeName || '').trim()}`;
-  const getActivityFromLocal = (crewScheduleId, dateYmd, timeHmm, placeName) => {
+  const getActivityFromLocal = (
+    crewScheduleId,
+    dateYmd,
+    timeHmm,
+    placeName
+  ) => {
     const map = readActivityMap();
-    if (crewScheduleId && map[`id:${crewScheduleId}`]) return map[`id:${crewScheduleId}`];
+    if (crewScheduleId && map[`id:${crewScheduleId}`])
+      return map[`id:${crewScheduleId}`];
     const comp = makeCompositeKey(dateYmd, timeHmm, placeName);
     return map[comp];
   };
-  const saveActivityToLocal = (crewScheduleId, dateYmd, timeHmm, placeName, name, activityId) => {
+  const saveActivityToLocal = (
+    crewScheduleId,
+    dateYmd,
+    timeHmm,
+    placeName,
+    name,
+    activityId
+  ) => {
     if (!name) return;
     const map = readActivityMap();
     const payload = { name, id: activityId };
@@ -111,7 +124,8 @@ export default function CrewListItem({
     const activityNameFromId = (() => {
       const id =
         schedule.activityId ||
-        (schedule.activity && (schedule.activity.id || schedule.activity.activityId)) ||
+        (schedule.activity &&
+          (schedule.activity.id || schedule.activity.activityId)) ||
         schedule.activityID ||
         schedule.activity_id;
       if (!id) return undefined;
@@ -122,19 +136,26 @@ export default function CrewListItem({
     // 편집용 활동명(항상 문자열)
     const activityText =
       (typeof schedule.activity === 'string' && schedule.activity) ||
-      (schedule.activity && typeof schedule.activity.name === 'string' && schedule.activity.name) ||
+      (schedule.activity &&
+        typeof schedule.activity.name === 'string' &&
+        schedule.activity.name) ||
       (typeof schedule.activityName === 'string' && schedule.activityName) ||
       (typeof schedule.activityLabel === 'string' && schedule.activityLabel) ||
-      (typeof schedule.activity_label === 'string' && schedule.activity_label) ||
-      (typeof schedule.activityKorName === 'string' && schedule.activityKorName) ||
-      (typeof schedule.activityNameKo === 'string' && schedule.activityNameKo) ||
-      (typeof schedule.activityKorean === 'string' && schedule.activityKorean) ||
+      (typeof schedule.activity_label === 'string' &&
+        schedule.activity_label) ||
+      (typeof schedule.activityKorName === 'string' &&
+        schedule.activityKorName) ||
+      (typeof schedule.activityNameKo === 'string' &&
+        schedule.activityNameKo) ||
+      (typeof schedule.activityKorean === 'string' &&
+        schedule.activityKorean) ||
       activityNameFromId ||
       '';
 
     // scheduleDate에서 시간 추출(HH:mm)
     const timeFromScheduleDate = (() => {
-      const sd = schedule.scheduleDate || schedule.dateTime || schedule.datetime;
+      const sd =
+        schedule.scheduleDate || schedule.dateTime || schedule.datetime;
       if (typeof sd === 'string' && sd.includes('T')) {
         const hhmm = sd.split('T')[1]?.slice(0, 5);
         return hhmm && /^\d{2}:\d{2}$/.test(hhmm) ? hhmm : undefined;
@@ -146,18 +167,37 @@ export default function CrewListItem({
     let fallbackNameFromSaved = '';
     if (!activityText && savedEventData) {
       const schedDateStr = (() => {
-        const raw = schedule.date || schedule.scheduleDate || schedule.startDate;
+        const raw =
+          schedule.date || schedule.scheduleDate || schedule.startDate;
         if (!raw) return '';
         return typeof raw === 'string'
           ? raw.split('T')[0]
           : new Date(raw).toISOString().split('T')[0];
       })();
-      const savedDateStr = savedEventData.date ? String(savedEventData.date).split('T')[0] : '';
-      const schedTimeStr = (schedule.time || schedule.startTime || timeFromScheduleDate || '').slice(0, 5);
+      const savedDateStr = savedEventData.date
+        ? String(savedEventData.date).split('T')[0]
+        : '';
+      const schedTimeStr = (
+        schedule.time ||
+        schedule.startTime ||
+        timeFromScheduleDate ||
+        ''
+      ).slice(0, 5);
       const savedTimeStr = (savedEventData.time || '').slice(0, 5);
-      const schedPlace = (schedule.locationAddress || schedule.place || schedule.location || '').trim();
+      const schedPlace = (
+        schedule.locationAddress ||
+        schedule.place ||
+        schedule.location ||
+        ''
+      ).trim();
       const savedPlace = (savedEventData.place || '').trim();
-      if (schedDateStr && schedTimeStr && savedDateStr === schedDateStr && savedTimeStr === schedTimeStr && savedPlace === schedPlace) {
+      if (
+        schedDateStr &&
+        schedTimeStr &&
+        savedDateStr === schedDateStr &&
+        savedTimeStr === schedTimeStr &&
+        savedPlace === schedPlace
+      ) {
         fallbackNameFromSaved = savedEventData.activity || '';
       }
     }
@@ -165,11 +205,23 @@ export default function CrewListItem({
     // 로컬 저장소 기반 보정(과거 일정 복원)
     let fallbackFromLocal = '';
     let fallbackIdFromLocal = undefined;
-    const schedDateStr2 = normalizeDateStr(schedule.date || schedule.scheduleDate || schedule.startDate);
-    const schedTimeStr2 = normalizeTimeStr(schedule.time || schedule.startTime || timeFromScheduleDate || '');
-    const schedPlace2 = (schedule.locationAddress || schedule.place || schedule.location || '').trim();
+    const schedDateStr2 = normalizeDateStr(
+      schedule.date || schedule.scheduleDate || schedule.startDate
+    );
+    const schedTimeStr2 = normalizeTimeStr(
+      schedule.time || schedule.startTime || timeFromScheduleDate || ''
+    );
+    const schedPlace2 = (
+      schedule.locationAddress ||
+      schedule.place ||
+      schedule.location ||
+      ''
+    ).trim();
     const localHit = getActivityFromLocal(
-      schedule.crewScheduleId || schedule.id || schedule.scheduleId || schedule.schedule_id,
+      schedule.crewScheduleId ||
+        schedule.id ||
+        schedule.scheduleId ||
+        schedule.schedule_id,
       schedDateStr2,
       schedTimeStr2,
       schedPlace2
@@ -181,7 +233,10 @@ export default function CrewListItem({
 
     // 표시용 라벨(없으면 카드에 기본 문구)
     const displayLabel =
-      activityText || fallbackNameFromSaved || (typeof schedule.label === 'string' ? schedule.label : '') || '활동';
+      activityText ||
+      fallbackNameFromSaved ||
+      (typeof schedule.label === 'string' ? schedule.label : '') ||
+      '활동';
 
     return {
       date: schedule.date || schedule.scheduleDate || schedule.startDate,
@@ -189,7 +244,8 @@ export default function CrewListItem({
       activity: activityText || fallbackNameFromSaved || fallbackFromLocal,
       activityId:
         schedule.activityId ||
-        (schedule.activity && (schedule.activity.id || schedule.activity.activityId)) ||
+        (schedule.activity &&
+          (schedule.activity.id || schedule.activity.activityId)) ||
         schedule.activityID ||
         schedule.activity_id ||
         fallbackIdFromLocal,
@@ -290,11 +346,21 @@ export default function CrewListItem({
                       className="w-10 h-10 rounded-md grid place-items-center border bg-transparent"
                       style={{ borderColor: color, borderWidth: 2 }}
                     >
-                      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill={color} d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.97 0-9 1.49-9 4.5V21h18v-2.5C21 15.49 14.97 14 12 14z"/>
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill={color}
+                          d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.97 0-9 1.49-9 4.5V21h18v-2.5C21 15.49 14.97 14 12 14z"
+                        />
                       </svg>
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">{displayName}</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {displayName}
+                    </div>
                   </div>
                 );
               })}
@@ -309,10 +375,10 @@ export default function CrewListItem({
             <h4 className="text-sm font-semibold text-gray-600 mb-2">
               크루 일정
             </h4>
-            <CalendarBox 
-              inline 
-              mode="mini" 
-              accent={color} 
+            <CalendarBox
+              inline
+              mode="mini"
+              accent={color}
               events={crewEvents}
               onDateClick={(date, dayEvents) => {
                 console.log('mini onDateClick', date, dayEvents?.[0]);
@@ -320,20 +386,39 @@ export default function CrewListItem({
                   // 해당 날짜의 첫 번째 이벤트를 선택 (여러 개면 첫 번째만) + 값 정규화
                   const ev = dayEvents[0] || {};
                   // 활동 정보 보강: 이벤트에 비어있으면 원본 스케줄에서 재추출
-                  let mergedActivity = (typeof ev.activity === 'string' && ev.activity) || '';
+                  let mergedActivity =
+                    (typeof ev.activity === 'string' && ev.activity) || '';
                   let mergedActivityId = ev.activityId;
                   if (!mergedActivity || !mergedActivityId) {
-                    const evKey = ev.crewScheduleId ?? ev.id ?? ev.scheduleId ?? ev.schedule_id;
+                    const evKey =
+                      ev.crewScheduleId ??
+                      ev.id ??
+                      ev.scheduleId ??
+                      ev.schedule_id;
                     const original = apiSchedules.find((s) => {
-                      const sid = s.crewScheduleId ?? s.id ?? s.scheduleId ?? s.schedule_id;
-                      return sid != null && evKey != null && String(sid) === String(evKey);
+                      const sid =
+                        s.crewScheduleId ??
+                        s.id ??
+                        s.scheduleId ??
+                        s.schedule_id;
+                      return (
+                        sid != null &&
+                        evKey != null &&
+                        String(sid) === String(evKey)
+                      );
                     });
                     if (original) {
-                      console.log('[onDateClick] found original schedule for', evKey, original);
+                      console.log(
+                        '[onDateClick] found original schedule for',
+                        evKey,
+                        original
+                      );
                       mergedActivityId =
                         mergedActivityId ||
                         original.activityId ||
-                        (original.activity && (original.activity.id || original.activity.activityId)) ||
+                        (original.activity &&
+                          (original.activity.id ||
+                            original.activity.activityId)) ||
                         original.activityID ||
                         original.activity_id ||
                         original.activityType ||
@@ -343,59 +428,86 @@ export default function CrewListItem({
                         original.categoryId;
                       mergedActivity =
                         mergedActivity ||
-                        (typeof original.activity === 'string' && original.activity) ||
-                        (original.activity && typeof original.activity.name === 'string' && original.activity.name) ||
-                        (typeof original.activityName === 'string' && original.activityName) ||
-                        (typeof original.activityLabel === 'string' && original.activityLabel) ||
+                        (typeof original.activity === 'string' &&
+                          original.activity) ||
+                        (original.activity &&
+                          typeof original.activity.name === 'string' &&
+                          original.activity.name) ||
+                        (typeof original.activityName === 'string' &&
+                          original.activityName) ||
+                        (typeof original.activityLabel === 'string' &&
+                          original.activityLabel) ||
                         '';
                     }
                   }
                   // 로컬 저장소 보강
                   if (!mergedActivity || !mergedActivityId) {
                     const normDate = ev.date
-                      ? (typeof ev.date === 'string'
-                          ? ev.date.split('T')[0]
-                          : new Date(ev.date).toISOString().split('T')[0])
+                      ? typeof ev.date === 'string'
+                        ? ev.date.split('T')[0]
+                        : new Date(ev.date).toISOString().split('T')[0]
                       : '';
                     const normTime = ev.time
-                      ? (typeof ev.time === 'string' ? ev.time.slice(0, 5) : '')
+                      ? typeof ev.time === 'string'
+                        ? ev.time.slice(0, 5)
+                        : ''
                       : '';
-                    const local = getActivityFromLocal(ev.crewScheduleId, normDate, normTime, ev.place || '');
+                    const local = getActivityFromLocal(
+                      ev.crewScheduleId,
+                      normDate,
+                      normTime,
+                      ev.place || ''
+                    );
                     if (local) {
                       mergedActivity = mergedActivity || local.name || '';
                       mergedActivityId = mergedActivityId || local.id;
                     }
                   }
                   // id로 이름 매핑
-                  const mappedFromId =
-                    mergedActivityId
-                      ? (activities.find((a) => Number(a.id) === Number(mergedActivityId))?.name)
-                      : undefined;
+                  const mappedFromId = mergedActivityId
+                    ? activities.find(
+                        (a) => Number(a.id) === Number(mergedActivityId)
+                      )?.name
+                    : undefined;
                   let finalActivityName =
                     mappedFromId ||
                     mergedActivity ||
-                    ((typeof ev.label === 'string' && ev.label !== '활동') ? ev.label : '');
+                    (typeof ev.label === 'string' && ev.label !== '활동'
+                      ? ev.label
+                      : '');
 
                   // 마지막 보정: 직전에 생성/수정한 이벤트 데이터와 (날짜/시간/장소) 매칭되면 활동명 채우기
                   if (!finalActivityName && savedEventData) {
-                    const sameDate = !!(savedEventData.date && ev.date) && String(savedEventData.date).split('T')[0] === String(ev.date).split('T')[0];
-                    const sameTime = !!(savedEventData.time && ev.time) && String(savedEventData.time).slice(0,5) === String(ev.time).slice(0,5);
-                    const samePlace = (savedEventData.place || '').trim() === (ev.place || '').trim();
+                    const sameDate =
+                      !!(savedEventData.date && ev.date) &&
+                      String(savedEventData.date).split('T')[0] ===
+                        String(ev.date).split('T')[0];
+                    const sameTime =
+                      !!(savedEventData.time && ev.time) &&
+                      String(savedEventData.time).slice(0, 5) ===
+                        String(ev.time).slice(0, 5);
+                    const samePlace =
+                      (savedEventData.place || '').trim() ===
+                      (ev.place || '').trim();
                     if (sameDate && sameTime && samePlace) {
                       finalActivityName = savedEventData.activity || '';
                       if (!mergedActivityId && finalActivityName) {
-                        const m = activities.find(a => a.name === finalActivityName);
+                        const m = activities.find(
+                          (a) => a.name === finalActivityName
+                        );
                         if (m) mergedActivityId = Number(m.id);
                       }
                     }
                   }
                   const normDate = ev.date
-                    ? (typeof ev.date === 'string'
-                        ? ev.date.split('T')[0]
-                        : new Date(ev.date).toISOString().split('T')[0])
+                    ? typeof ev.date === 'string'
+                      ? ev.date.split('T')[0]
+                      : new Date(ev.date).toISOString().split('T')[0]
                     : '';
                   const normTime = ev.time
-                    ? (typeof ev.time === 'string' ? ev.time : '12:00')
+                    ? typeof ev.time === 'string'
+                      ? ev.time
+                      : '12:00'
                     : '12:00';
                   setSelectedEvent({
                     activity: finalActivityName,
@@ -421,8 +533,6 @@ export default function CrewListItem({
               >
                 일정 생성
               </button>
-
-             
             </div>
           </section>
 
@@ -436,7 +546,8 @@ export default function CrewListItem({
               const stats = statisticsByCrewId?.[id];
               // 유연한 매핑: 다양한 응답 형태 지원
               const items =
-                (Array.isArray(stats?.activityCounts) && stats.activityCounts) ||
+                (Array.isArray(stats?.activityCounts) &&
+                  stats.activityCounts) ||
                 (Array.isArray(stats?.activities) && stats.activities) ||
                 (Array.isArray(stats?.topActivities) && stats.topActivities) ||
                 (Array.isArray(stats) && stats) ||
@@ -445,8 +556,13 @@ export default function CrewListItem({
               // 1) 이벤트 기반 집계(지나간 날짜만 포함)
               const toYmd = (val) => {
                 if (!val) return '';
-                if (typeof val === 'string') return val.includes('T') ? val.split('T')[0] : val;
-                try { return new Date(val).toISOString().split('T')[0]; } catch { return ''; }
+                if (typeof val === 'string')
+                  return val.includes('T') ? val.split('T')[0] : val;
+                try {
+                  return new Date(val).toISOString().split('T')[0];
+                } catch {
+                  return '';
+                }
               };
               const todayYmd = (() => {
                 const t = new Date();
@@ -459,32 +575,50 @@ export default function CrewListItem({
               (crewEvents || []).forEach((ev) => {
                 const evYmd = toYmd(ev.date);
                 if (!evYmd || evYmd >= todayYmd) return; // 오늘 포함 미래 제외, "지난 날짜만"
-                const nameFromId = ev.activityId != null
-                  ? (activities.find((a) => String(a.id) === String(ev.activityId))?.name)
-                  : undefined;
-                const label = (typeof ev.activity === 'string' && ev.activity) || nameFromId || '';
+                const nameFromId =
+                  ev.activityId != null
+                    ? activities.find(
+                        (a) => String(a.id) === String(ev.activityId)
+                      )?.name
+                    : undefined;
+                const label =
+                  (typeof ev.activity === 'string' && ev.activity) ||
+                  nameFromId ||
+                  '';
                 if (!label || label === '활동') return;
-                countsByNamePast.set(label, (countsByNamePast.get(label) || 0) + 1);
+                countsByNamePast.set(
+                  label,
+                  (countsByNamePast.get(label) || 0) + 1
+                );
               });
-              let segments = Array.from(countsByNamePast.entries()).map(([label, count]) => ({ label, count }));
+              let segments = Array.from(countsByNamePast.entries()).map(
+                ([label, count]) => ({ label, count })
+              );
 
               // 2) 이벤트가 없으면 통계 사용(백엔드 통계가 과거만 포함되어 있다고 가정)
               if (items.length > 0) {
-                const mapped = items.map((it) => {
-                  const rawId =
-                    it.activityId ?? it.id ?? (it.activity && (it.activity.id || it.activity.activityId));
-                  const nameFromId = rawId != null
-                    ? (activities.find((a) => String(a.id) === String(rawId))?.name)
-                    : undefined;
-                  const label =
-                    it.activityName ||
-                    (it.activity && it.activity.name) ||
-                    nameFromId ||
-                    it.name ||
-                    '활동';
-                  const count = it.count ?? it.value ?? it.total ?? 0;
-                  return { label, count };
-                }).filter(s => s.count > 0);
+                const mapped = items
+                  .map((it) => {
+                    const rawId =
+                      it.activityId ??
+                      it.id ??
+                      (it.activity &&
+                        (it.activity.id || it.activity.activityId));
+                    const nameFromId =
+                      rawId != null
+                        ? activities.find((a) => String(a.id) === String(rawId))
+                            ?.name
+                        : undefined;
+                    const label =
+                      it.activityName ||
+                      (it.activity && it.activity.name) ||
+                      nameFromId ||
+                      it.name ||
+                      '활동';
+                    const count = it.count ?? it.value ?? it.total ?? 0;
+                    return { label, count };
+                  })
+                  .filter((s) => s.count > 0);
                 if (segments.length === 0 && mapped.length > 0) {
                   segments = mapped;
                 }
@@ -501,7 +635,7 @@ export default function CrewListItem({
               // 'total' 류의 총합 레이블 제거
               const isGeneric = (name) => {
                 if (!name || typeof name !== 'string') return false;
-                const n = name.toLowerCase().replace(/[\s_\-]/g, '');
+                const n = name.toLowerCase().replace(/[\s_-]/g, '');
                 // 예: total, totalActivity, totalActivityCount, total_count, 전체, 합계 등
                 return (
                   n === 'total' ||
@@ -513,11 +647,14 @@ export default function CrewListItem({
                   n.includes('totalactivity')
                 );
               };
-              segments = segments.filter(s => !isGeneric(s.label));
+              segments = segments.filter((s) => !isGeneric(s.label));
 
               // 통계가 비어있거나 전부 총합만 있을 경우: 이미 위에서 이벤트 기반으로 segments가 채워짐
 
-              const totalCount = segments.reduce((a, b) => a + (b.count || 0), 0);
+              const totalCount = segments.reduce(
+                (a, b) => a + (b.count || 0),
+                0
+              );
 
               return (
                 <ActivityWidget
@@ -566,13 +703,17 @@ export default function CrewListItem({
 
           // 시간 파싱(HH:mm), 기본값 12:00
           const [h, m] = (data.time || '12:00').split(':').map(Number);
-          if (Number.isNaN(h) || Number.isNaN(m)) return alert('시간 형식이 올바르지 않습니다.');
+          if (Number.isNaN(h) || Number.isNaN(m))
+            return alert('시간 형식이 올바르지 않습니다.');
 
           // Swagger RequestBody 최소 필드로 단순화
           const payload = {
             activityId,
             date: data.date, // YYYY-MM-DD
-            time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`, // HH:mm:ss
+            time: `${String(h).padStart(2, '0')}:${String(m).padStart(
+              2,
+              '0'
+            )}:00`, // HH:mm:ss
             equipmentList: data.gear || '',
             locationAddress: (data.place || '').trim(),
             locationLatitude: Number(data.locationLatitude) || 0,
@@ -589,7 +730,8 @@ export default function CrewListItem({
             await loadCrewSchedules(id, currentYear, currentMonth);
 
             // 로컬 복원 저장
-            const createdId = created?.crewScheduleId || created?.id || created?.scheduleId;
+            const createdId =
+              created?.crewScheduleId || created?.id || created?.scheduleId;
             saveActivityToLocal(
               createdId,
               data.date,
@@ -622,39 +764,48 @@ export default function CrewListItem({
         showDelete={true}
         onSave={async (data) => {
           if (!id || !selectedEvent?.crewScheduleId) return;
-          
+
           try {
             // 일정 수정은 현재 API에 없으므로 삭제 후 재생성
             // TODO: 일정 수정 API가 추가되면 수정 API 호출로 변경
             await removeCrewSchedule(id, selectedEvent.crewScheduleId);
-            
+
             // 활동 ID 찾기
-            const activityObj = activities.find((a) => a.name === data.activity);
+            const activityObj = activities.find(
+              (a) => a.name === data.activity
+            );
             const activityId = activityObj ? parseInt(activityObj.id, 10) : 0;
-            
+
             // 시간 문자열 정규화(HH:mm:ss)
             const timeStr = data.time || '12:00';
             const [hour, minute] = timeStr.split(':').map(Number);
-            
+
             // Swagger 스펙에 맞는 요청 바디 형식
             const schedulePayload = {
               activityId: activityId,
               date: data.date,
-              time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`,
+              time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(
+                2,
+                '0'
+              )}:00`,
               equipmentList: data.gear || '',
-              locationAddress: data.place && data.place.trim() ? data.place.trim() : '',
+              locationAddress:
+                data.place && data.place.trim() ? data.place.trim() : '',
               locationLatitude: 0.0,
               locationLongitude: 0.0,
             };
-            
+
             const recreated = await addCrewSchedule(id, schedulePayload);
             await loadCrewSchedules(id, currentYear, currentMonth);
-            
+
             setOpenEditModal(false);
             setSelectedEvent(null);
 
             // 로컬 복원 저장
-            const newId = recreated?.crewScheduleId || recreated?.id || recreated?.scheduleId;
+            const newId =
+              recreated?.crewScheduleId ||
+              recreated?.id ||
+              recreated?.scheduleId;
             saveActivityToLocal(
               newId,
               data.date,
@@ -665,13 +816,16 @@ export default function CrewListItem({
             );
           } catch (error) {
             console.error('일정 수정 오류:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류';
+            const errorMessage =
+              error?.response?.data?.message ||
+              error?.message ||
+              '알 수 없는 오류';
             alert(`일정 수정 중 오류가 발생했습니다: ${errorMessage}`);
           }
         }}
         onDelete={async () => {
           if (!id || !selectedEvent?.crewScheduleId) return;
-          
+
           try {
             await removeCrewSchedule(id, selectedEvent.crewScheduleId);
             await loadCrewSchedules(id, currentYear, currentMonth);
@@ -697,4 +851,3 @@ export default function CrewListItem({
     </div>
   );
 }
-  
