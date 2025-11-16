@@ -61,6 +61,8 @@ export const useCrewStore = create((set, get) => ({
     try {
       const stats = await Crew.getCrewStatistics(crewId).catch(() => null);
       if (stats) {
+ 
+       
         set({
           statisticsByCrewId: { ...get().statisticsByCrewId, [crewId]: stats },
         });
@@ -74,12 +76,18 @@ export const useCrewStore = create((set, get) => ({
   // 크루 일정 조회
   loadCrewSchedules: async (crewId, year, month) => {
     try {
-      const schedules = await Crew.getCrewSchedules(crewId, year, month).catch(() => []);
+      const schedules = await Crew.getCrewSchedules(crewId, year, month).catch((error) => {
+        console.error('일정 조회 GET 요청 오류:', error);
+        console.error('에러 응답:', error?.response?.data);
+        return [];
+      });
       set({
         schedulesByCrewId: { ...get().schedulesByCrewId, [crewId]: schedules },
       });
       return schedules;
     } catch (error) {
+      console.error('일정 조회 오류:', error);
+      console.error('에러 응답:', error?.response?.data);
       return [];
     }
   },
@@ -87,9 +95,15 @@ export const useCrewStore = create((set, get) => ({
   // 전체 크루 일정 조회
   loadAllCrewSchedules: async (year, month) => {
     try {
-      const schedules = await Crew.getAllCrewSchedules(year, month).catch(() => []);
+      const schedules = await Crew.getAllCrewSchedules(year, month).catch((error) => {
+        console.error('전체 일정 조회 GET 요청 오류:', error);
+        console.error('에러 응답:', error?.response?.data);
+        return [];
+      });
       return schedules;
     } catch (error) {
+      console.error('전체 일정 조회 오류:', error);
+      console.error('에러 응답:', error?.response?.data);
       return [];
     }
   },
@@ -112,6 +126,9 @@ export const useCrewStore = create((set, get) => ({
     } catch (error) {
       console.error('일정 생성 API 오류:', error);
       console.error('요청 바디:', schedulePayload);
+      console.error('에러 응답 전체:', error?.response);
+      console.error('에러 응답 데이터:', error?.response?.data);
+      console.error('에러 상태 코드:', error?.response?.status);
       throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
     }
   },
