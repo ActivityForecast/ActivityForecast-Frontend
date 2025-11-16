@@ -12,17 +12,13 @@ const fromYMD = (s) => {
 const formatKoreanDate = (d) =>
   `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 
-/* 시간은 당장 사용 안 할 것 같아서 주석처리
-const makeTimeOptions = (stepMin = 30) => {
+const makeTimeOptions = () => {
   const arr = [];
   for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += stepMin) {
-      arr.push(`${pad2(h)}:${pad2(m)}`);
-    }
+    arr.push(`${pad2(h)}:00`);
   }
   return arr;
 };
-*/
 
 const buildCalendar = (baseDate) => {
   const first = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
@@ -46,7 +42,7 @@ const buildCalendar = (baseDate) => {
 export default function CalendarModal({
   isOpen,
   initialDate,
-  //initialTime = '15:30',
+  initialTime = '15:00',
   min,
   max,
   title = '날짜를 선택해주세요',
@@ -57,7 +53,7 @@ export default function CalendarModal({
   const [selected, setSelected] = useState(
     fromYMD(initialDate || toYMD(new Date()))
   );
-  //const [time, setTime] = useState(initialTime);
+  const [time, setTime] = useState(initialTime);
   const [cursorMonth, setCursorMonth] = useState(() => {
     const d = initialDate ? fromYMD(initialDate) : new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -66,16 +62,41 @@ export default function CalendarModal({
   const minDate = useMemo(() => (min ? fromYMD(min) : null), [min]);
   const maxDate = useMemo(() => (max ? fromYMD(max) : null), [max]);
   const weeks = useMemo(() => buildCalendar(cursorMonth), [cursorMonth]);
-  //const timeOptions = useMemo(() => makeTimeOptions(30), []);
+  const timeOptions = useMemo(() => makeTimeOptions(), []);
+
+  const now = new Date();
+  const todayYmd = toYMD(now);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const isPastTime = (t, dateObj) => {
+    if (toYMD(dateObj) !== todayYmd) return false;
+    const [hhStr, mmStr] = t.split(':');
+    const hh = parseInt(hhStr, 10) || 0;
+    const mm = parseInt(mmStr, 10) || 0;
+    const mins = hh * 60 + mm;
+    return mins < nowMinutes;
+  };
+
+  const getFirstFutureTime = (dateObj) => {
+    for (const t of timeOptions) {
+      if (!isPastTime(t, dateObj)) return t;
+    }
+    return timeOptions[timeOptions.length - 1];
+  };
 
   useEffect(() => {
     if (isOpen) {
       const init = fromYMD(initialDate || toYMD(new Date()));
       setSelected(init);
       setCursorMonth(new Date(init.getFullYear(), init.getMonth(), 1));
-      //setTime(initialTime || '15:30');
+
+      const baseTime = initialTime || '15:00';
+      const fixedTime = isPastTime(baseTime, init)
+        ? getFirstFutureTime(init)
+        : baseTime;
+      setTime(fixedTime);
     }
-  }, [isOpen, initialDate /*, initialTime*/]);
+  }, [isOpen, initialDate, initialTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSameDay = (a, b) =>
     a.getFullYear() === b.getFullYear() &&
@@ -104,7 +125,18 @@ export default function CalendarModal({
     setCursorMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1));
 
   const apply = () => {
-    onApply?.(toYMD(selected));
+    if (isPastTime(time, selected)) {
+    alert('이전 시간은 선택할 수 없어요.')
+    return;
+  }
+    const fixedTime = isPastTime(time, selected)
+      ? getFirstFutureTime(selected)
+      : time;
+
+    onApply?.({
+      date: toYMD(selected),
+      time: fixedTime,
+    });
   };
 
   return (
@@ -116,28 +148,41 @@ export default function CalendarModal({
       containerStyle={{ width: 400, ...(containerStyle || {}) }}
     >
       <div>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2">
           <div className="flex-1 items-center rounded-xl border border-gray-500 px-3 py-2 text-xs sm:text-sm font-medium text-gray-800 bg-white">
             {formatKoreanDate(selected)}
           </div>
-          {/*
-          <div className="flex items-center rounded-xl border border-gray-500 px-3 py-1.5 bg-white">
-            <select
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm font-medium text-gray-800 outline-none"
-            >
-              {timeOptions.map((t) => {
-                const [hh, mm] = t.split(':').map(Number);
-                const ampm = hh < 12 ? '오전' : '오후';
-                const h12 = hh % 12 === 0 ? 12 : hh % 12;
-                const label = `${ampm} ${h12}:${pad2(mm)}`;
-                return (
-                  <option key={t} value={t}>{label}</option>
-                );
-              })}
-            </select>
-          </div>*/}
+
+          <div className="mt-2 h-40 overflow-y-auto rounded-xl border border-gray-400 bg-white custom-scroll">
+            {timeOptions.map((t) => {
+              const disabled = isPastTime(t, selected);
+              const isActive = t === time;
+
+              const [hh] = t.split(':');
+              const h = Number(hh);
+              const ampm = h < 12 ? '오전' : '오후';
+              const h12 = h % 12 === 0 ? 12 : h % 12;
+              const label = `${ampm} ${h12}:00`;
+
+              return (
+                <button
+                  key={t}
+                  disabled={disabled}
+                  onClick={() => !disabled && setTime(t)}
+                  className={[
+                    'w-full flex items-center justify-between px-4 py-3 text-sm border-b border-gray-200 transition',
+                    disabled
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'hover:bg-blue-400 text-gray-700',
+                    isActive ? 'bg-blue-600 text-white hover:bg-blue-600' : ''
+                  ].join(' ')}
+                >
+                  {label}
+                  {isActive && !disabled && <span className="text-xs opacity-80">(선택됨)</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-3 rounded-2xl border border-gray-500 p-3">

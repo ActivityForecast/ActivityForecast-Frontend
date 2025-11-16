@@ -1,16 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Button from "components/Button";
 import CalendarBox from "mocks/Calender";
 import CrewListItem from "mocks/CrewListItem";
 import Modal, { ModalFooter } from "components/Modal/Modal";
 import InputField from "components/InputField";
 import { useAuthStore } from 'stores/auth';
-
 import { useCrewStore } from 'stores/crew';
+import CrewScheduleFormModal from 'components/CrewScheduleFormModal';
+import activities from 'constants/activities';
 
 export default function CrewPage() {
   const { user } = useAuthStore();
-  const { myCrews, loadMyCrews, addCrew, removeMember } = useCrewStore();
+  const { myCrews, loadMyCrews, addCrew, removeMember, loadAllCrewSchedules, addCrewSchedule } = useCrewStore();
+  
+  // 전체 크루 일정 상태
+  const [allCrewSchedules, setAllCrewSchedules] = useState([]);
+  const [selectedDateEvents, setSelectedDateEvents] = useState([]);
+  const [openScheduleModal, setOpenScheduleModal] = useState(false);
+  const [openEventListModal, setOpenEventListModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedCrewForSchedule, setSelectedCrewForSchedule] = useState(null);
+  
+  // 현재 년/월 계산
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
 
 
   // 서버에서 크루 목록 로드
@@ -19,6 +33,15 @@ export default function CrewPage() {
       loadMyCrews();
     }
   }, [user, loadMyCrews]);
+
+  // 전체 크루 일정 로드
+  useEffect(() => {
+    if (user) {
+      loadAllCrewSchedules(currentYear, currentMonth).then((schedules) => {
+        setAllCrewSchedules(schedules || []);
+      });
+    }
+  }, [user, currentYear, currentMonth, loadAllCrewSchedules]);
 
   // API 응답 필드가 달라도 안전하게 매핑
   const safeCrews = (myCrews || []).map((c) => ({
@@ -74,17 +97,107 @@ export default function CrewPage() {
     setShareOpen(true);
   };
 
-  // 예시 크루 일정 데이터
-  const crewEvents = {
-    1: [
-      { date: "2025-11-04", label: "런닝" },
-      { date: "2025-11-12", label: "축구" },
-    ],
-    2: [
-      { date: "2025-11-07", label: "배구" },
-      { date: "2025-11-20", label: "등산" },
-    ],
+  // 캘린더 이벤트를 CalendarBox 형식으로 변환
+  const calendarEvents = useMemo(() => {
+    return (allCrewSchedules || []).map((schedule) => {
+      const scheduleDate = schedule.scheduleDate || schedule.date;
+      const dateStr = scheduleDate ? (typeof scheduleDate === 'string' ? scheduleDate.split('T')[0] : scheduleDate) : '';
+      return {
+        date: dateStr,
+        label: schedule.activity || schedule.activityName || '활동',
+        activity: schedule.activity || schedule.activityName,
+        place: schedule.locationAddress || schedule.place,
+        time: schedule.time || schedule.startTime,
+        gear: schedule.equipmentList || schedule.gear,
+        crewScheduleId: schedule.crewScheduleId || schedule.id,
+        crewId: schedule.crewId,
+        crewName: safeCrews.find(c => c.id === schedule.crewId)?.name || '크루',
+        crewColor: safeCrews.find(c => c.id === schedule.crewId)?.color || '#83C8FC',
+      };
+    });
+  }, [allCrewSchedules, safeCrews]);
+
+  // 날짜 클릭 핸들러
+  const handleDateClick = (date, dayEvents) => {
+    if (dayEvents && dayEvents.length > 0) {
+      setSelectedDateEvents(dayEvents);
+      setSelectedDate(date);
+      setOpenEventListModal(true);
+    } else {
+      // 일정이 없는 날짜 클릭 시 일정 생성 모달 열기 (크루 선택 필요)
+      setSelectedDate(date);
+      setOpenScheduleModal(true);
+    }
   };
+
+  // 일정 생성 핸들러
+  const handleCreateSchedule = async (data, crewId) => {
+    if (!crewId) {
+      alert('크루를 선택해주세요.');
+      return;
+    }
+
+    try {
+      // 활동 ID 찾기
+      const activityObj = activities.find((a) => a.name === data.activity);
+      if (!activityObj) {
+        alert('활동을 찾을 수 없습니다.');
+        return;
+      }
+      const activityId = parseInt(activityObj.id, 10);
+
+      if (!data.date) {
+        alert('날짜를 선택해주세요.');
+        return;
+      }
+
+      // 시간 문자열을 객체로 변환
+      const timeStr = data.time || '12:00';
+      const [hour, minute] = timeStr.split(':').map(Number);
+
+      if (isNaN(hour) || isNaN(minute)) {
+        alert('시간 형식이 올바르지 않습니다.');
+        return;
+      }
+
+      // locationId가 유효하지 않으면 null로 설정
+      const locId = data.locationId;
+      const validLocationId = (typeof locId === 'number' && locId > 0) ? locId : null;
+      
+      const schedulePayload = {
+        activityId: activityId,
+        date: data.date,
+        time: {
+          hour: hour,
+          minute: minute,
+          second: 0,
+          nano: 0,
+        },
+        equipmentList: data.gear || '',
+        locationId: validLocationId,
+        locationAddress: data.place && data.place.trim() ? data.place.trim() : null,
+        locationLatitude: data.locationLatitude || null,
+        locationLongitude: data.locationLongitude || null,
+      };
+
+      const created = await addCrewSchedule(crewId, schedulePayload);
+      if (created) {
+        // 일정 목록 새로고침
+        const schedules = await loadAllCrewSchedules(currentYear, currentMonth);
+        setAllCrewSchedules(schedules || []);
+        setOpenScheduleModal(false);
+        setSelectedCrewForSchedule(null);
+        setSelectedDate(null);
+      } else {
+        alert('일정 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('일정 생성 오류:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류';
+      alert(`일정 생성 중 오류가 발생했습니다: ${errorMessage}`);
+    }
+  };
+
 
   // 크루 생성 로직
   const handleCreateCrew = async () => {
@@ -202,7 +315,6 @@ export default function CrewPage() {
                     max={c.max}
                     color={c.color}
                     members={c.members}
-                    events={crewEvents[c.id] || []}
                     onLeave={handleLeaveRequest}
                     onShare={() => handleShare(c)}
                   />
@@ -219,7 +331,13 @@ export default function CrewPage() {
         </h3>
         <div className="mt-6 flex justify-center">
           {/* 이 캘린더만 X축 더 넓게 */}
-          <CalendarBox inline size="xl" wide />
+          <CalendarBox 
+            inline 
+            size="xl" 
+            wide 
+            events={calendarEvents}
+            onDateClick={handleDateClick}
+          />
         </div>
       </div>
 
@@ -311,6 +429,115 @@ export default function CrewPage() {
         </ModalFooter>
       </Modal>
       </div>
+
+      {/* 일정 목록 모달 (날짜 클릭 시) */}
+      <Modal
+        isOpen={openEventListModal}
+        onClose={() => {
+          setOpenEventListModal(false);
+          setSelectedDateEvents([]);
+          setSelectedDate(null);
+        }}
+        title={selectedDate ? `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일 일정` : '일정'}
+      >
+        <div className="mt-4 max-h-96 overflow-y-auto">
+          {selectedDateEvents.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">해당 날짜에 일정이 없습니다.</div>
+          ) : (
+            <div className="space-y-3">
+              {selectedDateEvents.map((event, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-lg border border-gray-200"
+                  style={{ borderLeftColor: event.crewColor, borderLeftWidth: '4px' }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="text-xs px-2 py-1 rounded-full text-white font-semibold"
+                      style={{ backgroundColor: event.crewColor }}
+                    >
+                      {event.crewName}
+                    </span>
+                    <span className="text-sm text-gray-500">{event.time || '시간 미지정'}</span>
+                  </div>
+                  <div className="font-semibold text-lg text-black">{event.activity || event.label}</div>
+                  {event.place && (
+                    <div className="text-sm text-gray-600 mt-1">📍 {event.place}</div>
+                  )}
+                  {event.gear && (
+                    <div className="text-sm text-gray-500 mt-1">🎒 {event.gear}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <button
+            onClick={() => {
+              setOpenEventListModal(false);
+              setSelectedDateEvents([]);
+              setSelectedDate(null);
+            }}
+            className="flex-1 rounded-xl bg-[#4FBFF2] text-white py-3"
+          >
+            닫기
+          </button>
+        </ModalFooter>
+      </Modal>
+
+      {/* 일정 생성 모달 (크루 선택 포함) */}
+      <Modal
+        isOpen={openScheduleModal}
+        onClose={() => {
+          setOpenScheduleModal(false);
+          setSelectedCrewForSchedule(null);
+          setSelectedDate(null);
+        }}
+        title="새 일정 만들기"
+      >
+        <div className="mt-4 space-y-4">
+          {/* 크루 선택 */}
+          <div>
+            <label className="font-semibold text-black block mb-2">크루 선택</label>
+            <select
+              value={selectedCrewForSchedule?.id || ''}
+              onChange={(e) => {
+                const crewId = parseInt(e.target.value, 10);
+                const crew = safeCrews.find(c => c.id === crewId);
+                setSelectedCrewForSchedule(crew || null);
+              }}
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black bg-white"
+            >
+              <option value="">크루를 선택하세요</option>
+              {safeCrews.map((crew) => (
+                <option key={crew.id} value={crew.id}>
+                  {crew.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 일정 생성 폼 */}
+          {selectedCrewForSchedule && (
+            <CrewScheduleFormModal
+              isOpen={true}
+              onClose={() => {
+                setOpenScheduleModal(false);
+                setSelectedCrewForSchedule(null);
+                setSelectedDate(null);
+              }}
+              title=""
+              color={selectedCrewForSchedule.color}
+              initialData={selectedDate ? { date: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` } : null}
+              onSave={(data) => {
+                handleCreateSchedule(data, selectedCrewForSchedule.id);
+              }}
+              showDelete={false}
+            />
+          )}
+        </div>
+      </Modal>
     </main>
   );
 }

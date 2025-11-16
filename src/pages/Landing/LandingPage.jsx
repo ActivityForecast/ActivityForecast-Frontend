@@ -50,7 +50,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="relative rounded-3xl shadow-2xl overflow-visible md:overflow-hidden">
+        <section className="relative rounded-3xl shadow-2xl overflow-hidden">
           <div className={`${current.bgClass} transition-colors duration-500`}>
             <div className="relative min-h-[520px] md:h-[620px]">
               <div

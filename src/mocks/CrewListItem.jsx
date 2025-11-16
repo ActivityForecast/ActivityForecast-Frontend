@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CalendarBox from 'mocks/Calender';
-import Modal, { ModalFooter } from 'components/Modal/Modal';
-import InputField from 'components/InputField';
-import Button from 'components/Button';
 import ActivityWidget from 'mocks/ActivityWidget';
+import CrewScheduleFormModal from 'components/CrewScheduleFormModal';
+import CalendarAddedModal from 'pages/Detail/CalendarModal';
+import { useCrewStore } from 'stores/crew';
+import activities from 'constants/activities';
 
 export default function CrewListItem({
   id,
@@ -11,7 +12,6 @@ export default function CrewListItem({
   current = 3,
   max = 5,
   color = '#FC8385',
-  events = [],
   onLeave,
   onShare,
   members = [],
@@ -20,12 +20,37 @@ export default function CrewListItem({
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [openCalendarModal, setOpenCalendarModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [savedEventData, setSavedEventData] = useState(null);
+  
+  // API 연동을 위한 store
+  const { schedulesByCrewId, loadCrewSchedules, addCrewSchedule, removeCrewSchedule } = useCrewStore();
+  
+  // 현재 년/월 계산
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12
 
-  // 일정 생성 모달 내부 상태
-  const [activity, setActivity] = useState('');
-  const [place, setPlace] = useState('');
-  const [date, setDate] = useState('');
-  const [gear, setGear] = useState('');
+  // API에서 일정 불러오기
+  useEffect(() => {
+    if (id) {
+      loadCrewSchedules(id, currentYear, currentMonth);
+    }
+  }, [id, currentYear, currentMonth, loadCrewSchedules]);
+
+  // API 일정을 CalendarBox 형식으로 변환
+  const apiSchedules = schedulesByCrewId[id] || [];
+  const crewEvents = apiSchedules.map((schedule) => ({
+    date: schedule.date || schedule.scheduleDate || schedule.startDate,
+    label: schedule.activity || schedule.activityName || schedule.label || '활동',
+    activity: schedule.activity || schedule.activityName,
+    place: schedule.place || schedule.location,
+    time: schedule.time || schedule.startTime,
+    gear: schedule.gear || schedule.equipment,
+    crewScheduleId: schedule.crewScheduleId || schedule.id,
+  }));
 
   const open = hovering || pinned;
 
@@ -129,7 +154,19 @@ export default function CrewListItem({
             <h4 className="text-sm font-semibold text-gray-600 mb-2">
               크루 일정
             </h4>
-            <CalendarBox inline mode="mini" accent={color} events={events} />
+            <CalendarBox 
+              inline 
+              mode="mini" 
+              accent={color} 
+              events={crewEvents}
+              onDateClick={(date, dayEvents) => {
+                if (dayEvents && dayEvents.length > 0) {
+                  // 해당 날짜의 첫 번째 이벤트를 선택 (여러 개면 첫 번째만)
+                  setSelectedEvent(dayEvents[0]);
+                  setOpenEditModal(true);
+                }
+              }}
+            />
 
             {/* 일정 생성/삭제 버튼 */}
             <div className="mt-3 flex items-center gap-3">
@@ -142,14 +179,7 @@ export default function CrewListItem({
                 일정 생성
               </button>
 
-              <button
-                type="button"
-                className="rounded-full px-4 py-2"
-                style={{ backgroundColor: `${color}1A`, color }}
-                onClick={() => alert('일정 삭제 UI는 추후 연결')}
-              >
-                일정 삭제
-              </button>
+             
             </div>
           </section>
 
@@ -192,99 +222,164 @@ export default function CrewListItem({
       </div>
 
       {/* 일정 생성 모달 */}
-      <Modal
+      <CrewScheduleFormModal
         isOpen={openCreate}
         onClose={() => setOpenCreate(false)}
         title="새 일정 만들기"
-        style={{ '--modal-max-h-sm': 'calc(100dvh - 80px)' }}
-      >
-        <div className="flex flex-col gap-4 mt-2">
-          {/* 활동 */}
-          <label className="font-semibold text-black">활동</label>
-          <div className="relative">
-            <select
-              value={activity}
-              onChange={(e) => setActivity(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-gray-300 px-4 py-3 text-md sm:py-4 sm:text-lg focus:outline-none focus:ring-1"
-            >
-              <option value="" disabled>
-                활동 선택
-              </option>
-              <option value="running">러닝</option>
-              <option value="soccer">축구</option>
-              <option value="basketball">농구</option>
-              <option value="hiking">등산</option>
-            </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-              ▾
-            </span>
-          </div>
+        color={color}
+        onSave={async (data) => {
+          if (!id) return;
+          
+          try {
+            // 활동 ID 찾기 (activities에서 activity 이름으로 찾기)
+            const activityObj = activities.find((a) => a.name === data.activity);
+            if (!activityObj) {
+              alert('활동을 찾을 수 없습니다.');
+              return;
+            }
+            const activityId = parseInt(activityObj.id, 10);
+            
+            if (!data.date) {
+              alert('날짜를 선택해주세요.');
+              return;
+            }
+            
+            // 시간 문자열을 객체로 변환 (HH:mm 형식)
+            const timeStr = data.time || '12:00';
+            const [hour, minute] = timeStr.split(':').map(Number);
+            
+            if (isNaN(hour) || isNaN(minute)) {
+              alert('시간 형식이 올바르지 않습니다.');
+              return;
+            }
+            
+            // Swagger 스펙에 맞는 요청 바디 형식
+            const locId = data.locationId;
+            const validLocationId = (typeof locId === 'number' && locId > 0) ? locId : null;
+            
+            // locationId가 유효하지 않으면 null로 설정 (백엔드에서 처리하도록)
+            const schedulePayload = {
+              activityId: activityId,
+              date: data.date, // YYYY-MM-DD 형식
+              time: {
+                hour: hour,
+                minute: minute,
+                second: 0,
+                nano: 0,
+              },
+              equipmentList: data.gear || '',
+              locationId: validLocationId,
+              locationAddress: data.place && data.place.trim() ? data.place.trim() : null,
+              locationLatitude: data.locationLatitude || null,
+              locationLongitude: data.locationLongitude || null,
+            };
+            
+            console.log('일정 생성 요청:', JSON.stringify(schedulePayload, null, 2));
+            const created = await addCrewSchedule(id, schedulePayload);
+            
+            if (created) {
+              // 일정 생성 모달 닫기
+              setOpenCreate(false);
+              // 저장된 이벤트 데이터 저장 (확인 모달용)
+              setSavedEventData(data);
+              // 캘린더 추가 확인 모달 열기
+              setOpenCalendarModal(true);
+              // 일정 목록 새로고침
+              await loadCrewSchedules(id, currentYear, currentMonth);
+            } else {
+              alert('일정 생성에 실패했습니다.');
+            }
+          } catch (error) {
+            console.error('일정 생성 오류:', error);
+            console.error('에러 응답:', error?.response?.data);
+            const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류';
+            alert(`일정 생성 중 오류가 발생했습니다: ${errorMessage}`);
+          }
+        }}
+      />
 
-          {/* 장소 */}
-          <label className="font-semibold text-black">장소</label>
-          <InputField
-            id="place"
-            type="text"
-            placeholder="장소 검색"
-            value={place}
-            onChange={(e) => setPlace(e.target.value)}
-          />
+      {/* 일정 수정/삭제 모달 */}
+      <CrewScheduleFormModal
+        isOpen={openEditModal}
+        onClose={() => {
+          setOpenEditModal(false);
+          setSelectedEvent(null);
+        }}
+        title="일정 수정"
+        color={color}
+        initialData={selectedEvent}
+        showDelete={true}
+        onSave={async (data) => {
+          if (!id || !selectedEvent?.crewScheduleId) return;
+          
+          try {
+            // 일정 수정은 현재 API에 없으므로 삭제 후 재생성
+            // TODO: 일정 수정 API가 추가되면 수정 API 호출로 변경
+            await removeCrewSchedule(id, selectedEvent.crewScheduleId);
+            
+            // 활동 ID 찾기
+            const activityObj = activities.find((a) => a.name === data.activity);
+            const activityId = activityObj ? parseInt(activityObj.id, 10) : 0;
+            
+            // 시간 문자열을 객체로 변환
+            const timeStr = data.time || '12:00';
+            const [hour, minute] = timeStr.split(':').map(Number);
+            
+            // Swagger 스펙에 맞는 요청 바디 형식
+            const schedulePayload = {
+              activityId: activityId,
+              date: data.date,
+              time: {
+                hour: hour,
+                minute: minute,
+                second: 0,
+                nano: 0,
+              },
+              equipmentList: data.gear || '',
+              locationId: 0,
+              locationAddress: data.place && data.place.trim() ? data.place.trim() : '',
+              locationLatitude: 0.0,
+              locationLongitude: 0.0,
+            };
+            
+            await addCrewSchedule(id, schedulePayload);
+            await loadCrewSchedules(id, currentYear, currentMonth);
+            
+            setOpenEditModal(false);
+            setSelectedEvent(null);
+          } catch (error) {
+            console.error('일정 수정 오류:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류';
+            alert(`일정 수정 중 오류가 발생했습니다: ${errorMessage}`);
+          }
+        }}
+        onDelete={async () => {
+          if (!id || !selectedEvent?.crewScheduleId) return;
+          
+          try {
+            await removeCrewSchedule(id, selectedEvent.crewScheduleId);
+            await loadCrewSchedules(id, currentYear, currentMonth);
+            setOpenEditModal(false);
+            setSelectedEvent(null);
+          } catch (error) {
+            console.error('일정 삭제 오류:', error);
+            alert('일정 삭제 중 오류가 발생했습니다.');
+          }
+        }}
+      />
 
-          {/* 날짜 */}
-          <label className="font-semibold text-black">날짜</label>
-          <div className="flex items-center gap-2 -mt-1">
-            <button
-              type="button"
-              className="rounded-full px-3 py-2 text-xs font-semibold"
-              style={{ backgroundColor: `${color}1A`, color }}
-            >
-              AI 추천
-            </button>
-            <span className="text-xs text-gray-400">가장 쾌적한 시간 제안</span>
-          </div>
-          <InputField
-            id="date"
-            type="datetime-local"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-
-          {/* 멤버 */}
-          <label className="font-semibold text-black">멤버</label>
-          <div className="flex items-center gap-4">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-gray-300" />
-            ))}
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-500"
-            >
-              +
-            </button>
-          </div>
-
-          {/* 준비물 */}
-          <label className="font-semibold text-black">준비물</label>
-          <InputField
-            id="gear"
-            type="text"
-            placeholder="리스트 입력"
-            value={gear}
-            onChange={(e) => setGear(e.target.value)}
-          />
-
-          <ModalFooter>
-            <Button
-              type="button"
-              styleType="solid"
-              className="mt-2 w-full"
-              onClick={() => setOpenCreate(false)}
-            >
-              생성
-            </Button>
-          </ModalFooter>
-        </div>
-      </Modal>
+      {/* 캘린더 추가 확인 모달 */}
+      <CalendarAddedModal
+        isOpen={openCalendarModal}
+        onClose={() => {
+          setOpenCalendarModal(false);
+          setSavedEventData(null);
+        }}
+        dateYmd={savedEventData?.date || ''}
+        locationName={savedEventData?.place || '장소 미지정'}
+        activityLabel={savedEventData?.activity || ''}
+      />
     </div>
   );
 }
+  
