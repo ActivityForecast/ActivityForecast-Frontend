@@ -189,7 +189,7 @@ export default function CalendarModal({
                       : isOut
                       ? 'text-gray-300'
                       : 'text-gray-800 hover:bg-gray-100',
-                    disabled && 'opacity-40 cursor-not-allowed',
+                    disabled && 'opacity-40 cursor-not-allowed text-gray-300 hover:bg-transparent',
                   ]
                     .filter(Boolean)
                     .join(' ')}

@@ -100,28 +100,65 @@ export default function CrewPage() {
     setShareOpen(true);
   };
 
-  // 캘린더 이벤트를 CalendarBox 형식으로 변환
+  // 캘린더 이벤트를 CalendarBox 형식으로 변환 (모든 크루 일정 집계)
   const calendarEvents = useMemo(() => {
     return (allCrewSchedules || []).map((schedule) => {
       const scheduleDate = schedule.scheduleDate || schedule.date;
-      const dateStr = scheduleDate ? (typeof scheduleDate === 'string' ? scheduleDate.split('T')[0] : scheduleDate) : '';
+      const dateStr = scheduleDate
+        ? (typeof scheduleDate === 'string' ? scheduleDate.split('T')[0] : scheduleDate)
+        : '';
+
+      // 시간 HH:mm 추출 (백엔드가 scheduleDate만 줄 때 대비)
+      const timeFromScheduleDate = (() => {
+        const sd = schedule.scheduleDate || schedule.dateTime || schedule.datetime;
+        if (typeof sd === 'string' && sd.includes('T')) {
+          const hhmm = sd.split('T')[1]?.slice(0, 5);
+          return hhmm && /^\d{2}:\d{2}$/.test(hhmm) ? hhmm : undefined;
+        }
+        return undefined;
+      })();
+
+      // 활동명 매핑(백엔드가 id를 주면 상수에서 매핑, 다음으로 문자열 키)
+      const activityNameFromId = (() => {
+        const id =
+          schedule.activityId ||
+          (schedule.activity && (schedule.activity.id || schedule.activity.activityId)) ||
+          schedule.activityID ||
+          schedule.activity_id;
+        if (!id) return undefined;
+        const found = activities.find((a) => String(a.id) === String(id));
+        return found?.name;
+      })();
+
+      const activityText =
+        activityNameFromId ||
+        (typeof schedule.activity === 'string' && schedule.activity) ||
+        (schedule.activity && typeof schedule.activity.name === 'string' && schedule.activity.name) ||
+        (typeof schedule.activityName === 'string' && schedule.activityName) ||
+        (typeof schedule.activityLabel === 'string' && schedule.activityLabel) ||
+        (typeof schedule.activity_label === 'string' && schedule.activity_label) ||
+        '';
+
+      const crew = safeCrews.find(c => c.id === (schedule.crewId ?? schedule.crew?.id));
+
       return {
         date: dateStr,
-        label: schedule.activity || schedule.activityName || '활동',
-        activity: schedule.activity || schedule.activityName,
-        place: schedule.locationAddress || schedule.place,
-        time: schedule.time || schedule.startTime,
-        gear: schedule.equipmentList || schedule.gear,
-        crewScheduleId: schedule.crewScheduleId || schedule.id,
-        crewId: schedule.crewId,
-        crewName: safeCrews.find(c => c.id === schedule.crewId)?.name || '크루',
-        crewColor: safeCrews.find(c => c.id === schedule.crewId)?.color || '#83C8FC',
+        label: activityText || (typeof schedule.label === 'string' ? schedule.label : '') || '활동',
+        activity: activityText,
+        place: schedule.locationAddress || schedule.place || schedule.location,
+        time: schedule.time || schedule.startTime || timeFromScheduleDate,
+        gear: schedule.equipmentList || schedule.gear || schedule.equipment,
+        crewScheduleId: schedule.crewScheduleId || schedule.id || schedule.scheduleId,
+        crewId: schedule.crewId ?? schedule.crew?.id,
+        crewName: crew?.name || '크루',
+        crewColor: crew?.color || '#83C8FC',
       };
     });
   }, [allCrewSchedules, safeCrews]);
 
   // 날짜 클릭 핸들러
   const handleDateClick = (date, dayEvents) => {
+    console.log('top calendar click', date, dayEvents);
     if (dayEvents && dayEvents.length > 0) {
       setSelectedDateEvents(dayEvents);
       setSelectedDate(date);
@@ -165,16 +202,11 @@ export default function CrewPage() {
         return;
       }
 
-      // Swagger 스펙에 맞는 요청 바디 형식 (locationId 필드 제거됨)
+      // Swagger 스펙에 맞는 요청 바디 형식 (time은 HH:mm:ss 문자열)
       const schedulePayload = {
         activityId: activityId,
         date: data.date,
-        time: {
-          hour: hour,
-          minute: minute,
-          second: 0,
-          nano: 0,
-        },
+        time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`,
         equipmentList: data.gear || '',
         locationAddress: data.place && data.place.trim() ? data.place.trim() : '',
         locationLatitude: data.locationLatitude || 0,
@@ -369,6 +401,7 @@ export default function CrewPage() {
             inline 
             size="xl" 
             wide 
+            accent="#111827"
             events={calendarEvents}
             onDateClick={handleDateClick}
           />
@@ -526,10 +559,10 @@ export default function CrewPage() {
                   </div>
                   <div className="font-semibold text-lg text-black">{event.activity || event.label}</div>
                   {event.place && (
-                    <div className="text-sm text-gray-600 mt-1">📍 {event.place}</div>
+                    <div className="text-sm text-gray-600 mt-1">장소 : {event.place}</div>
                   )}
                   {event.gear && (
-                    <div className="text-sm text-gray-500 mt-1">🎒 {event.gear}</div>
+                    <div className="text-sm text-gray-500 mt-1">준비물 : {event.gear}</div>
                   )}
                 </div>
               ))}

@@ -144,7 +144,21 @@ export default function CrewScheduleFormModal({
   // 초기 데이터 로드
   useEffect(() => {
     if (isOpen && initialData) {
-      setActivity(activities.find((a) => a.name === initialData.activity) || null);
+      console.log('edit initialData', initialData);
+      const rawName =
+        initialData.activity ||
+        ((initialData.label && initialData.label !== '활동' && initialData.label !== '활동 선택')
+          ? initialData.label
+          : '');
+      const normalizedName = (rawName || '').trim();
+      const foundByName =
+        activities.find((a) => a.name === normalizedName) ||
+        activities.find((a) => a.name.trim().toLowerCase() === normalizedName.toLowerCase());
+      const foundById = activities.find(
+        (a) => String(a.id) === String(initialData.activityId)
+      );
+      // 매칭 실패 시에도 표시용으로 최소 객체 설정
+      setActivity(foundByName || foundById || (normalizedName ? { id: '', name: normalizedName } : null));
       setPlace(initialData.place || '');
       setLocationId(initialData.locationId || null);
       setLocationLatitude(initialData.locationLatitude || null);
@@ -204,15 +218,24 @@ export default function CrewScheduleFormModal({
           {/* 활동 */}
           <label className="font-semibold text-black">활동</label>
           <div onClick={() => setOpenActivityModal(true)} className="cursor-pointer">
-            <InputField
-              id="activity"
-              type="text"
-              placeholder="활동 선택"
-              value={activity?.name || ''}
-              onChange={() => {}}
-              readOnly
-              className="cursor-pointer"
-            />
+            {(() => {
+              const displayActivityName =
+                (activity && typeof activity === 'object' && activity.name) ||
+                (typeof activity === 'string' ? activity : '') ||
+                ((initialData?.activity && initialData.activity !== '활동 선택') ? initialData.activity : '') ||
+                ((initialData?.label && initialData.label !== '활동' && initialData.label !== '활동 선택') ? initialData.label : '');
+              return (
+                <InputField
+                  id="activity"
+                  type="text"
+                  placeholder="활동 선택"
+                  value={displayActivityName}
+                  onChange={() => {}}
+                  readOnly
+                  className="cursor-pointer"
+                />
+              );
+            })()}
           </div>
 
           {/* 장소 */}
@@ -321,6 +344,7 @@ export default function CrewScheduleFormModal({
                 : new Date(date).toISOString().split('T')[0])
             : undefined
         }
+        min={new Date().toISOString().split('T')[0]}
         title="날짜를 선택해주세요"
         onApply={(selectedDate) => {
           setDate(selectedDate);
