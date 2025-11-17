@@ -33,6 +33,7 @@ export default function ActivityWidget({
     return { totalCount, segs };
   }, [segments, gapDeg]);
 
+
   const arcPath = (r1, r2, a0, a1) => {
     const A0 = (Math.PI / 180) * a0;
     const A1 = (Math.PI / 180) * a1;
@@ -59,11 +60,16 @@ export default function ActivityWidget({
     const r = outerRadius + 4;
     const x0 = cx + r * Math.cos(rad);
     const y0 = cy + r * Math.sin(rad);
-    const x1 = cx + (r + 10) * Math.cos(rad);
-    const y1 = cy + (r + 10) * Math.sin(rad);
+    const x1 = cx + (r + 8) * Math.cos(rad);
+    const y1 = cy + (r + 8) * Math.sin(rad);
     const isRight = Math.cos(rad) >= 0;
-    const x2 = x1 + (isRight ? 10 : -10);
+    let x2 = x1 + (isRight ? 8 : -8);
     const y2 = y1;
+    // clamp to keep label inside svg bounds
+    const margin = 6;
+    const minX = margin;
+    const maxX = size - margin;
+    x2 = Math.max(minX, Math.min(maxX, x2));
     return { x0, y0, x1, y1, x2, y2, isRight };
   };
 
@@ -96,7 +102,12 @@ export default function ActivityWidget({
         </div>
 
         {/* 오른쪽 도넛 그래프 */}
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          style={{ overflow: 'visible' }}
+        >
           {segs.map((s, i) => (
             <path
               key={i}
@@ -118,7 +129,7 @@ export default function ActivityWidget({
                 <line x1={x0} y1={y0} x2={x1} y2={y1} stroke={accent} strokeWidth="1.5" />
                 <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={accent} strokeWidth="1.5" />
                 <text
-                  x={x2 + (isRight ? 4 : -4)}
+                  x={x2 + (isRight ? 6 : -6)}
                   y={y2 - 2}
                   textAnchor={isRight ? "start" : "end"}
                   fontSize="11"
