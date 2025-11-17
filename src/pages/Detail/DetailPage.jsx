@@ -11,6 +11,8 @@ import { formatMd } from 'utils/formatMd';
 import CalendarAddedModal from './CalendarModal';
 import { fetchMainRecommendationsForCards } from 'api/recommendation';
 import { useAuthStore } from 'stores/auth';
+import { useHistoryStore } from 'stores/history';
+import activities from 'constants/activities';
 
 function getLocationName(sel) {
   return sel?.name || sel?.label || sel?.city || sel?.address || '선택한 위치';
@@ -37,6 +39,7 @@ export default function DetailPage() {
   const navigate = useNavigate();
   const { accessToken } = useAuthStore();
   const isLoggedIn = !!accessToken;
+  const { createHistoryItem } = useHistoryStore();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -130,8 +133,34 @@ export default function DetailPage() {
   const handleRetry = () => {
     setRetryCount((c) => c + 1);
   };
-  const handleCalendar = () => {
-    setOpenAdded(true);
+  const handleCalendar = async () => {
+    try {
+      // activityId 매핑: 추천 카드 라벨 → 활동 상수 id
+      const label = mergedActive?.label || '';
+      const matched = activities.find((a) => a.name === label);
+      if (!matched) {
+        alert('활동을 찾을 수 없습니다. 다른 활동을 선택해 주세요.');
+        return;
+      }
+
+      // 시간 "HH:mm" → "HH:mm:ss"
+      const [hh = '12', mm = '00'] = (time || '12:00').split(':');
+      const scheduleTime = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`;
+
+      const payload = {
+        activityId: Number(matched.id),
+        locationAddress: getLocationName(selected),
+        scheduleDate: date,           // YYYY-MM-DD
+        scheduleTime,                 // HH:mm:ss
+      };
+
+      await createHistoryItem(payload);
+      setOpenAdded(true);
+    } catch (e) {
+      console.error('create history error', e?.response || e);
+      const msg = e?.response?.data?.message || '일정 추가에 실패했습니다.';
+      alert(msg);
+    }
   };
 
   return (
