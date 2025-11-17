@@ -48,6 +48,10 @@ export const getAllCrewSchedules = (year, month) =>
 export const createCrewSchedule = (crewId, body) =>
   api.post(`/crews/${crewId}/schedules`, body).then(unwrap);
 
+// 크루 일정 수정 (PUT)
+export const updateCrewSchedule = (crewId, crewScheduleId, body) =>
+  api.put(`/crews/${crewId}/schedules/${crewScheduleId}`, body).then(unwrap);
+
 // 크루 일정 삭제
 export const deleteCrewSchedule = (crewId, crewScheduleId) =>
   api.delete(`/crews/${crewId}/schedules/${crewScheduleId}`).then(unwrap);
