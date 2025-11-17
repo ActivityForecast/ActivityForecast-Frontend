@@ -33,6 +33,7 @@ export default function CrewListItem({
     loadCrewStatistics,
     addCrewSchedule,
     removeCrewSchedule,
+    updateCrewSchedule,
   } = useCrewStore();
 
   // 현재 년/월 계산
@@ -766,10 +767,6 @@ export default function CrewListItem({
           if (!id || !selectedEvent?.crewScheduleId) return;
 
           try {
-            // 일정 수정은 현재 API에 없으므로 삭제 후 재생성
-            // TODO: 일정 수정 API가 추가되면 수정 API 호출로 변경
-            await removeCrewSchedule(id, selectedEvent.crewScheduleId);
-
             // 활동 ID 찾기
             const activityObj = activities.find(
               (a) => a.name === data.activity
@@ -783,7 +780,7 @@ export default function CrewListItem({
             // Swagger 스펙에 맞는 요청 바디 형식
             const schedulePayload = {
               activityId: activityId,
-              date: data.date,
+              date: data.date, // YYYY-MM-DD
               time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(
                 2,
                 '0'
@@ -795,7 +792,11 @@ export default function CrewListItem({
               locationLongitude: 0.0,
             };
 
-            const recreated = await addCrewSchedule(id, schedulePayload);
+            const updated = await updateCrewSchedule(
+              id,
+              selectedEvent.crewScheduleId,
+              schedulePayload
+            );
             await loadCrewSchedules(id, currentYear, currentMonth);
 
             setOpenEditModal(false);
@@ -803,9 +804,7 @@ export default function CrewListItem({
 
             // 로컬 복원 저장
             const newId =
-              recreated?.crewScheduleId ||
-              recreated?.id ||
-              recreated?.scheduleId;
+              updated?.crewScheduleId || updated?.id || updated?.scheduleId;
             saveActivityToLocal(
               newId,
               data.date,

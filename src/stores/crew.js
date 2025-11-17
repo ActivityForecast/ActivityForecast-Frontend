@@ -151,6 +151,27 @@ export const useCrewStore = create((set, get) => ({
     }
   },
 
+  // 크루 일정 수정 (PUT)
+  updateCrewSchedule: async (crewId, crewScheduleId, schedulePayload) => {
+    try {
+      const updated = await Crew.updateCrewSchedule(crewId, crewScheduleId, schedulePayload);
+      // 목록에서 해당 항목 교체
+      const list = get().schedulesByCrewId[crewId] || [];
+      const nextList = list.map((item) =>
+        (item?.crewScheduleId ?? item?.id ?? item?.scheduleId) === crewScheduleId ? updated : item
+      );
+      set({
+        schedulesByCrewId: { ...get().schedulesByCrewId, [crewId]: nextList },
+      });
+      return updated;
+    } catch (error) {
+      console.error('일정 수정 API 오류:', error);
+      console.error('요청 바디:', schedulePayload);
+      console.error('에러 응답 데이터:', error?.response?.data);
+      throw error;
+    }
+  },
+
   // 크루 멤버 초대
   inviteMember: async (crewId, invitedUserId) => {
     try {
