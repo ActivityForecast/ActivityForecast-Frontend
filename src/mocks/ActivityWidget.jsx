@@ -11,7 +11,10 @@ export default function ActivityWidget({
   ],
   withBorder = true,
   gapClass = "gap-44",
+  className = "",
+  svgClassName = "w-[120px] sm:w-[140px]",
 }) {
+  // 내부 좌표계 크기(뷰박스). 실제 픽셀 크기는 svgClassName으로 제어
   const size = 140;
   const cx = size / 2;
   const cy = size / 2;
@@ -86,7 +89,7 @@ export default function ActivityWidget({
 
   return (
     <div
-      className={`rounded-2xl bg-white p-4 sm:p-5 ${withBorder ? "border" : ""}`}
+      className={`rounded-2xl bg-white px-5 sm:px-6 pt-7 sm:pt-8 pb-5 sm:pb-6 ${withBorder ? "border" : ""} ${className}`}
       style={withBorder ? { borderColor: accent, borderWidth: 1, borderOpacity: 0.3 } : undefined}
     >
       {/* 타이틀 */}
@@ -95,17 +98,16 @@ export default function ActivityWidget({
       <div className={`grid grid-cols-[auto_auto] items-center justify-center ${gapClass}`}>
         {/* 왼쪽 큰 숫자 */}
         <div className="flex items-center gap-1">
-          <span className="text-6xl font-extrabold" style={{ color: accent }}>
+          <span className="text-4xl sm:text-6xl font-extrabold" style={{ color: accent }}>
             {total}
           </span>
-          <span className="text-2xl font-extrabold text-black relative top-3 leading-none">회</span>
+          <span className="text-lg sm:text-2xl font-extrabold text-black relative top-3 leading-none">회</span>
         </div>
 
         {/* 오른쪽 도넛 그래프 */}
         <svg
-          width={size}
-          height={size}
           viewBox={`0 0 ${size} ${size}`}
+          className={`${svgClassName} h-auto`}
           style={{ overflow: 'visible' }}
         >
           {segs.map((s, i) => (

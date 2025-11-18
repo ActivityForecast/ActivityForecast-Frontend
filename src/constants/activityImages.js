@@ -20,6 +20,7 @@ import 배구 from 'assets/images/activities/배구.svg';
 import 배드민턴 from 'assets/images/activities/배드민턴.svg';
 import 밴드운동 from 'assets/images/activities/밴드운동.svg';
 import 번지점프 from 'assets/images/activities/번지점프.svg';
+import 달리기 from 'assets/images/activities/런닝.png';
 
 import 볼링 from 'assets/images/activities/볼링.svg';
 import 비치발리볼 from 'assets/images/activities/비치발리볼.svg';
@@ -97,7 +98,7 @@ import trx from 'assets/images/activities/trx.svg';
 const activityImageMap = {
   걷기,
   조깅,
-  달리기: 조깅,
+  달리기: 달리기,
   마라톤,
   하이킹,
   등산,

@@ -376,8 +376,14 @@ export default function HistoryPage() {
       const styles = window.getComputedStyle(el);
       const gap = parseInt(styles.columnGap || styles.gap || '18', 10) || 18;
       const cardW = firstCard.offsetWidth;
-      const desired = cardW * 3 + gap * 2; // 3 cards visible
-      setViewportWidthPx(desired);
+      const isSmUp = window.matchMedia && window.matchMedia('(min-width: 640px)').matches;
+      if (isSmUp) {
+        const desired = cardW * 3 + gap * 2; // 3 cards visible (sm 이상)
+        setViewportWidthPx(desired);
+      } else {
+        // 모바일에서는 가로폭을 고정하지 않고 컨테이너에 맞춤
+        setViewportWidthPx(null);
+      }
     };
     updateViewport();
     window.addEventListener('resize', updateViewport);
@@ -385,7 +391,7 @@ export default function HistoryPage() {
   }, [displayedTimeline.length, selectedMonth]);
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative">
+    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative pt-16 sm:pt-24 pb-12">
       <div
         className="
           w-[90vw] max-w-[952px]
@@ -396,7 +402,7 @@ export default function HistoryPage() {
           shadow-sm
           flex flex-col items-center
           justify-start
-          pt-12 px-10 pb-10
+          pt-10 sm:pt-14 px-5 sm:px-12 pb-10 sm:pb-12
         "
       >
         <h1 className="text-center text-2xl sm:text-3xl font-bold">히스토리</h1>
@@ -405,12 +411,14 @@ export default function HistoryPage() {
         <section className="w-full mt-10 min-h-[320px]">
           <div className="rounded-3xl bg-[#F8FAFC]  px-4 py-10 sm:px-6 sm:py-12 md:px-8 md:py-14">
             <h2 className="text-base font-semibold  mb-3">활동요약</h2>
-            <div className="rounded-2xl shadow-md min-h-[220px] overflow-visible">
+            <div className="rounded-2xl shadow-md overflow-visible">
               <ActivityWidget
                 accent="#3B82F6"
                 total={total}
                 segments={segments}
                 withBorder={false}
+                gapClass="gap-6 sm:gap-10 md:gap-20"
+                svgClassName="w-[120px] sm:w-[140px]"
               />
             </div>
           </div>
@@ -422,7 +430,7 @@ export default function HistoryPage() {
             <h2 className="text-base font-semibold">타임라인</h2>
           </div>
 
-          <div className="relative rounded-3xl bg-white shadow-sm px-6 py-6">
+          <div className="relative rounded-3xl bg-white shadow-sm px-4 sm:px-6 py-5 sm:py-6">
             <div className="text-center text-lg font-semibold mb-6">
               {monthLabel}
               <button
@@ -470,7 +478,7 @@ export default function HistoryPage() {
                   key={item.id}
                   type="button"
                   data-card="true"
-                  className="shrink-0 w-[200px] rounded-2xl bg-white  p-3 text-left"
+                  className="shrink-0 w-[180px] sm:w-[200px] rounded-2xl bg-white  p-3 text-left"
                   onClick={() => openDetail(item)}
                 >
                   <div
@@ -495,13 +503,13 @@ export default function HistoryPage() {
                     />
                   </div>
 
-                  <div className="mt-2 text-base font-semibold text-center">
+                  <div className="mt-2 text-sm sm:text-base font-semibold text-center">
                     {item.title}
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-1 text-center">
+                  <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1 text-center">
                     {item.date}
                   </div>
-                  <div className="mt-2 text-[12px] text-gray-700 text-center">
+                  <div className="mt-2 text-[11px] sm:text-[12px] text-gray-700 text-center">
                     {(item.rating ?? '-')}{' '} / 5
                   </div>
                 </button>

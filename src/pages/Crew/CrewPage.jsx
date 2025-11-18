@@ -307,7 +307,7 @@ export default function CrewPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative">
+    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative pt-16 sm:pt-24 pb-12">
       <div
         className="
           w-[90vw] max-w-[952px]
@@ -318,8 +318,8 @@ export default function CrewPage() {
           shadow-sm
           flex flex-col items-center
           justify-start
-          pt-12 px-10 pb-10
-          overflow-hidden
+          pt-10 sm:pt-14 px-5 sm:px-12 pb-10 sm:pb-12
+          overflow-visible
         "
       >
         {/*  상단 버튼 */}
