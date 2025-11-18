@@ -261,18 +261,18 @@ export default function CrewListItem({
 
   return (
     <div
-      className="group relative w-full rounded-xl bg-white shadow-sm overflow-hidden transition-all duration-300"
+      className="group relative w-full rounded-xl bg-white shadow-sm overflow-visible transition-all duration-300"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
       {/* 좌측 컬러 바 */}
       <span
-        className="absolute inset-y-0 left-0 w-4"
+        className="absolute inset-y-0 left-0 w-4 rounded-l-xl"
         style={{ backgroundColor: color }}
       />
 
       {/* 상단 영역 */}
-      <div className="flex items-center justify-between pl-8 pr-6 py-2">
+      <div className="flex items-center justify-between pl-8 pr-6 py-3">
         <div className="text-base font-semibold text-black">{name}</div>
 
         <div className="flex items-center gap-3">
@@ -330,9 +330,12 @@ export default function CrewListItem({
 
       {/* 상세 정보 */}
       <div
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
-          open ? 'max-h-[700px] opacity-100' : 'max-h-0 opacity-0'
-        } pl-8 pr-6 pb-4 md:pl-10`}
+        className={`overflow-y-hidden transition-[max-height,opacity] duration-300 ease-out ${
+          open
+            ? 'max-h-[1200px] sm:max-h-[700px] opacity-100 pl-8 pr-6 pb-4 md:pl-10'
+            : 'max-h-0 opacity-0 p-0'
+        }`}
+        style={{ overflowX: 'visible' }}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 items-start">
           {/* 멤버 */}
@@ -381,6 +384,7 @@ export default function CrewListItem({
               mode="mini"
               accent={color}
               events={crewEvents}
+              className="origin-top-left scale-[0.9] sm:scale-100"
               onDateClick={(date, dayEvents) => {
                 console.log('mini onDateClick', date, dayEvents?.[0]);
                 if (dayEvents && dayEvents.length > 0) {
@@ -662,7 +666,8 @@ export default function CrewListItem({
                   accent={color}
                   total={totalCount}
                   segments={segments}
-                  gapClass="gap-2"
+                  gapClass="gap-4 sm:gap-8"
+                  svgClassName="w-[110px] sm:w-[140px]"
                 />
               );
             })()}

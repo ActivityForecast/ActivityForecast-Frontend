@@ -35,3 +35,5 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Responsive global scaling: keep desktop as-is, gently scale down on smaller screens */
