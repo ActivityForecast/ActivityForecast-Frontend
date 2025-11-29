@@ -1,88 +1,242 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Modal, { ModalFooter } from 'components/Modal/Modal';
 import ActivityWidget from 'mocks/ActivityWidget';
-
-function getMonthFromKoreanDate(d, fallbackMonth) {
-  const m = /\s(\d{1,2})월/.exec(d);
-  return m ? parseInt(m[1], 10) : fallbackMonth;
-}
+import { useHistoryStore } from 'stores/history';
+import activities from 'constants/activities';
+import { getActivityImage } from 'constants/activityImages';
+import { useAuthStore } from 'stores/auth';
+import { useCrewStore } from 'stores/crew';
+import { Feedback } from 'api/feedback';
+import { useWeather } from 'hooks/useWeather';
 
 export default function HistoryPage() {
-  // 임시 더미 데이터 (해당 월 활동 요약)
-  const segments = useMemo(
-    () => [
-      { label: '러닝', count: 2 },
-      { label: '축구', count: 2 },
-      { label: '농구', count: 1 },
-    ],
-    []
-  );
+  const now = useMemo(() => new Date(), []);
+  const currentYear = now.getFullYear();
 
-  const total = useMemo(
-    () => segments.reduce((a, b) => a + (b.count || 0), 0),
-    [segments]
-  );
-
-  // 임시 타임라인 데이터 (해당 월)
-  const timeline = useMemo(
-    () => [
-      {
-        id: 1,
-        title: '축구',
-        date: '2025년 10월 17일',
-        done: true,
-        rating: 5,
-        img: null,
-        difficulty: '상',
-      },
-      {
-        id: 2,
-        title: '러닝',
-        date: '2025년 10월 13일',
-        done: true,
-        rating: 5,
-        img: null,
-        difficulty: '중',
-      },
-      {
-        id: 3,
-        title: '농구',
-        date: '2025년 10월 8일',
-        done: false,
-        rating: 3.5,
-        img: null,
-        difficulty: '중',
-      },
-      {
-        id: 4,
-        title: '축구',
-        date: '2025년 10월 3일',
-        done: true,
-        rating: 4,
-        img: null,
-        difficulty: '상',
-      },
-    ],
-    []
-  );
+  // 개인 활동 통계 불러오기
+  const { statsByYm, listByYm, loadMonthlyStats, loadMonthlyList, updateHistoryItem } = useHistoryStore();
+  const { user } = useAuthStore();
+  const { loadAllCrewSchedules } = useCrewStore();
+  const [crewKeySet, setCrewKeySet] = useState(new Set());
 
   // 월 선택 상태
   const thisMonth = useMemo(() => new Date().getMonth() + 1, []);
-  const [selectedMonth, setSelectedMonth] = useState(10);
-  const [draftMonth, setDraftMonth] = useState(10);
+  const [selectedMonth, setSelectedMonth] = useState(thisMonth);
+  const [draftMonth, setDraftMonth] = useState(thisMonth);
   const [openMonthModal, setOpenMonthModal] = useState(false);
   const monthListRef = useRef(null);
   const scrollEndTimerRef = useRef(null);
   const monthItemHeight = 48;
   const [listSpacer, setListSpacer] = useState(64);
 
+  const ymKey = useMemo(
+    () => `${currentYear}-${String(selectedMonth).padStart(2, '0')}`,
+    [currentYear, selectedMonth]
+  );
+
+  useEffect(() => {
+    // 선택 월 변경 시 통계/목록 로딩
+    loadMonthlyStats(currentYear, selectedMonth);
+    loadMonthlyList(currentYear, selectedMonth);
+  }, [currentYear, selectedMonth, loadMonthlyStats, loadMonthlyList]);
+
+  // 크루 월간 일정 키 세트 생성(crew 일정은 히스토리에서 제외하기 위함)
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await loadAllCrewSchedules(currentYear, selectedMonth);
+        const norm = (v) => (v == null ? '' : String(v).trim());
+        const splitIso = (dt) => {
+          if (!dt) return { ymd: '', time: '' };
+          const s = String(dt);
+          if (s.includes('T')) {
+            const [d, t] = s.split('T');
+            // strip possible milliseconds/timezone
+            const hhmmss = (t || '').slice(0, 8);
+            return { ymd: d, time: hhmmss };
+          }
+          return { ymd: s, time: '' };
+        };
+        const toKey = (it) => {
+          const aid =
+            it?.activityId ?? it?.activity?.id ?? it?.activity?.activityId ?? '';
+          const rawDate =
+            it?.date ?? it?.scheduleDate ?? it?.startDate ?? it?.day ?? '';
+          const rawTime = it?.time ?? it?.scheduleTime ?? it?.startTime ?? '';
+          const { ymd, time: timeFromIso } = splitIso(rawDate);
+          const date = ymd || rawDate;
+          const time = rawTime || timeFromIso || '';
+          const loc =
+            it?.locationAddress ?? it?.place ?? it?.location ?? '';
+          return `${norm(aid)}|${norm(date)}|${norm(time)}|${norm(loc)}`;
+        };
+        const s = new Set();
+        (Array.isArray(list) ? list : []).forEach((it) => {
+          s.add(toKey(it));
+        });
+        setCrewKeySet(s);
+      } catch {
+        setCrewKeySet(new Set());
+      }
+    })();
+  }, [loadAllCrewSchedules, currentYear, selectedMonth]);
+
+  const stats = statsByYm?.[ymKey];
+  const list = useMemo(() => listByYm?.[ymKey] || [], [listByYm, ymKey]);
+
+  // 응답을 개인 기준으로 필터링: (1) 현재 사용자 식별자 매칭, (2) 크루 항목 제외
+  const filteredList = useMemo(() => {
+    const currentUserId =
+      user?.id ?? user?.userId ?? user?.uid ?? user?.memberId ?? null;
+
+    const norm = (v) => (v == null ? '' : String(v).trim());
+    const historyKey = (it) => {
+      const aid =
+        it?.activityId ?? it?.activity?.id ?? it?.activity?.activityId ?? '';
+      return `${norm(aid)}|${norm(it?.scheduleDate)}|${norm(it?.scheduleTime)}|${norm(it?.locationAddress)}`;
+    };
+
+    return (list || []).filter((it) => {
+      // 1) 사용자 기준 필터 (응답에 userId가 있을 때만 적용)
+      const itemUserId = it?.userId ?? it?.ownerId ?? it?.memberId ?? it?.user?.id;
+      if (itemUserId != null && currentUserId != null) {
+        if (String(itemUserId) !== String(currentUserId)) return false;
+      }
+
+      // 2) 크루에서 유입된 항목 제외 추정
+      const hasCrewId =
+        it?.crewId != null ||
+        it?.crew?.id != null ||
+        it?.crewScheduleId != null;
+      const source = String(it?.source || it?.origin || '').toUpperCase();
+      const isCrewSource = source.includes('CREW') || source.includes('GROUP');
+
+      if (hasCrewId || isCrewSource) return false;
+
+      // 3) 크루 일정 키셋과 일치하면 제외(액티비티/날짜/시간/장소 기준)
+      const key = historyKey(it);
+      if (crewKeySet.has(key)) return false;
+
+      return true;
+    });
+  }, [list, user, crewKeySet]);
+
+  // 활동 요약 세그먼트 매핑
+  const segments = useMemo(() => {
+    const countsObj =
+      stats?.activityCounts ||
+      stats?.activityCount ||
+      stats?.counts ||
+      {};
+
+    const toLabel = (key) => {
+      const found = activities.find((a) => String(a.id) === String(key));
+      return found?.name || String(key);
+    };
+
+    const segs = Object.entries(countsObj).map(([k, v]) => ({
+      label: toLabel(k),
+      count: Number(v) || 0,
+    }));
+
+    // 총합/합계 류 제거
+    const isGeneric = (name) => {
+      if (!name || typeof name !== 'string') return false;
+      const n = name.toLowerCase().replace(/[\s_-]/g, '');
+      return (
+        n === 'total' ||
+        n === 'sum' ||
+        n === '전체' ||
+        n === '합계' ||
+        n.startsWith('total') ||
+        /total.*count/.test(n) ||
+        n.includes('totalactivity')
+      );
+    };
+
+    return segs.filter((s) => s.count > 0 && !isGeneric(s.label));
+  }, [stats]);
+
+  const total = useMemo(() => {
+    if (typeof stats?.totalCompletedCount === 'number') {
+      return stats.totalCompletedCount;
+    }
+    return segments.reduce((a, b) => a + (b.count || 0), 0);
+  }, [stats, segments]);
+
+  // 타임라인: 월별 히스토리 응답 매핑
+  const timeline = useMemo(() => {
+    // 1) 중복 제거: activityId + date + time + locationAddress 기준으로 최신 createdAt/큰 scheduleId 유지
+    const map = new Map();
+    const getKey = (it) => {
+      const aid =
+        it?.activityId ?? it?.activity?.id ?? it?.activity?.activityId ?? '';
+      const d = it?.scheduleDate ?? '';
+      const t = it?.scheduleTime ?? '';
+      const loc = (it?.locationAddress || '').trim();
+      return `${aid}|${d}|${t}|${loc}`;
+    };
+    const isNewer = (a, b) => {
+      const aTime = new Date(a?.createdAt || 0).getTime();
+      const bTime = new Date(b?.createdAt || 0).getTime();
+      if (!Number.isNaN(aTime) && !Number.isNaN(bTime) && aTime !== bTime) {
+        return aTime > bTime;
+      }
+      const aId = Number(a?.scheduleId ?? a?.id ?? -1);
+      const bId = Number(b?.scheduleId ?? b?.id ?? -1);
+      return aId > bId;
+    };
+    for (const it of filteredList) {
+      const k = getKey(it);
+      const prev = map.get(k);
+      if (!prev || isNewer(it, prev)) map.set(k, it);
+    }
+    const deduped = Array.from(map.values());
+
+    const toLabel = (it) => {
+      if (it?.activity?.name) return it.activity.name;
+      if (it?.activity?.activityName) return it.activity.activityName;
+      if (it?.activityName) return it.activityName;
+      const aid =
+        it?.activityId ?? it?.activity?.id ?? it?.activity?.activityId;
+      const found = activities.find((a) => String(a.id) === String(aid));
+      return found?.name || '활동';
+    };
+    const fmtDate = (dStr) => {
+      if (!dStr) return '';
+      const d = new Date(dStr);
+      if (Number.isNaN(d.getTime())) return dStr;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const da = String(d.getDate()).padStart(2, '0');
+      return `${y}년 ${parseInt(m, 10)}월 ${parseInt(da, 10)}일`;
+    };
+    return deduped.map((it) => {
+      const title = toLabel(it);
+      const category = it?.activity?.categoryName || it?.categoryName || '';
+      const img = getActivityImage(title, category);
+      return {
+      id: it?.scheduleId ?? it?.id,
+      title,
+      date: fmtDate(it?.scheduleDate),
+      done: !!(it?.isParticipated ?? it?.done),
+      rating: typeof it?.rating === 'number' ? it.rating : (it?.rating ? Number(it.rating) : undefined),
+      img,
+      difficulty:
+        it?.activity?.difficulty ||
+        it?.activity?.difficultyLevel ||
+        it?.difficulty ||
+        '',
+      locationAddress: it?.locationAddress || '',
+      raw: it,
+    };
+    });
+  }, [filteredList]);
+
   const monthLabel = `${selectedMonth}월 타임라인`;
   const displayedTimeline = useMemo(
-    () =>
-      timeline.filter(
-        (t) => getMonthFromKoreanDate(t.date, thisMonth) === selectedMonth
-      ),
-    [timeline, selectedMonth, thisMonth]
+    () => timeline, 
+    [timeline]
   );
 
   useEffect(() => {
@@ -130,11 +284,75 @@ export default function HistoryPage() {
   // 상세 모달 상태
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
+  const [localParticipated, setLocalParticipated] = useState(false);
+  const [localRating, setLocalRating] = useState(5);
+  const [viewportWidthPx, setViewportWidthPx] = useState(null);
   const openDetail = (item) => {
     setDetailItem(item);
+    setLocalParticipated(!!(item?.done));
+    setLocalRating(
+      typeof item?.rating === 'number' ? item.rating : Number(item?.rating) || 5
+    );
     setDetailOpen(true);
   };
   const closeDetail = () => setDetailOpen(false);
+
+  // 날씨 아이콘 계산(상단 우측 아이콘)
+  const wxYmd = detailItem?.raw?.scheduleDate || '';
+  const wxTime = detailItem?.raw?.scheduleTime || '';
+  const { data: wxData } = useWeather(wxYmd, wxTime);
+  const weatherEmoji = (() => {
+    const code = String(wxData?.icon || '').slice(0, 2);
+    switch (code) {
+      case '01':
+        return '☀️';
+      case '02':
+        return '🌤️';
+      case '03':
+      case '04':
+        return '☁️';
+      case '09':
+      case '10':
+        return '🌧️';
+      case '11':
+        return '⛈️';
+      case '13':
+        return '❄️';
+      case '50':
+        return '🌫️';
+      default:
+        // 로딩/미확정 시 기본 아이콘을 비워 플리커 제거
+        return '';
+    }
+  })();
+
+  // 상세 모달 표시용 파생 값들
+  const difficultyLabel = useMemo(() => {
+    const v =
+      detailItem?.difficulty ??
+      detailItem?.raw?.activity?.difficultyLevel ??
+      detailItem?.raw?.difficulty;
+    const n = Number(v);
+    if (Number.isNaN(n)) return v || '';
+    if (n >= 5) return '매우 높음';
+    if (n === 4) return '높음';
+    if (n === 3) return '중';
+    if (n === 2) return '낮음';
+    return '매우 낮음';
+  }, [detailItem]);
+
+  const canRate = useMemo(() => {
+    try {
+      const ymd = detailItem?.raw?.scheduleDate || '';
+      const t = detailItem?.raw?.scheduleTime || '23:59:59';
+      if (!ymd) return true;
+      const dt = new Date(`${ymd}T${t}`);
+      if (Number.isNaN(dt.getTime())) return true;
+      return new Date() >= dt;
+    } catch {
+      return true;
+    }
+  }, [detailItem]);
 
   const scrollRef = useRef(null);
   const scrollByCards = (dir) => {
@@ -148,8 +366,32 @@ export default function HistoryPage() {
     el.scrollBy({ left: amount, behavior: 'smooth' });
   };
 
+  // 뷰포트 폭을 "카드 3장 + 간격 2개"로 고정
+  useEffect(() => {
+    const updateViewport = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const firstCard = el.querySelector('[data-card="true"]');
+      if (!firstCard) return;
+      const styles = window.getComputedStyle(el);
+      const gap = parseInt(styles.columnGap || styles.gap || '18', 10) || 18;
+      const cardW = firstCard.offsetWidth;
+      const isSmUp = window.matchMedia && window.matchMedia('(min-width: 640px)').matches;
+      if (isSmUp) {
+        const desired = cardW * 3 + gap * 2; // 3 cards visible (sm 이상)
+        setViewportWidthPx(desired);
+      } else {
+        // 모바일에서는 가로폭을 고정하지 않고 컨테이너에 맞춤
+        setViewportWidthPx(null);
+      }
+    };
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, [displayedTimeline.length, selectedMonth]);
+
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative">
+    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative pt-16 sm:pt-24 pb-12">
       <div
         className="
           w-[90vw] max-w-[952px]
@@ -160,21 +402,23 @@ export default function HistoryPage() {
           shadow-sm
           flex flex-col items-center
           justify-start
-          pt-12 px-10 pb-10
+          pt-10 sm:pt-14 px-5 sm:px-12 pb-10 sm:pb-12
         "
       >
         <h1 className="text-center text-2xl sm:text-3xl font-bold">히스토리</h1>
 
         {/* 활동요약 */}
-        <section className="w-full mt-8">
-          <div className="rounded-3xl bg-[#F8FAFC]  p-4 sm:p-6 md:p-8">
+        <section className="w-full mt-10 min-h-[320px]">
+          <div className="rounded-3xl bg-[#F8FAFC]  px-4 py-10 sm:px-6 sm:py-12 md:px-8 md:py-14">
             <h2 className="text-base font-semibold  mb-3">활동요약</h2>
-            <div className="rounded-2xl shadow-md">
+            <div className="rounded-2xl shadow-md overflow-visible">
               <ActivityWidget
                 accent="#3B82F6"
                 total={total}
                 segments={segments}
                 withBorder={false}
+                gapClass="gap-6 sm:gap-10 md:gap-20"
+                svgClassName="w-[120px] sm:w-[140px]"
               />
             </div>
           </div>
@@ -186,7 +430,7 @@ export default function HistoryPage() {
             <h2 className="text-base font-semibold">타임라인</h2>
           </div>
 
-          <div className="relative rounded-3xl bg-white shadow-sm px-6 py-6">
+          <div className="relative rounded-3xl bg-white shadow-sm px-4 sm:px-6 py-5 sm:py-6">
             <div className="text-center text-lg font-semibold mb-6">
               {monthLabel}
               <button
@@ -221,7 +465,8 @@ export default function HistoryPage() {
             {/* 스크롤 리스트 */}
             <div
               ref={scrollRef}
-              className="timeline-scroll no-scrollbar flex gap-[18px] overflow-x-auto px-4 pb-2 scroll-smooth snap-x snap-mandatory"
+              className="timeline-scroll no-scrollbar flex gap-[18px] overflow-x-auto pl-0 pr-10 sm:pl-0 sm:pr-12 pb-2 scroll-smooth snap-x snap-mandatory mx-auto"
+              style={viewportWidthPx ? { width: viewportWidthPx } : undefined}
             >
               {displayedTimeline.length === 0 && (
                 <div className="w-full text-center text-sm text-gray-500 py-6">
@@ -233,7 +478,7 @@ export default function HistoryPage() {
                   key={item.id}
                   type="button"
                   data-card="true"
-                  className="shrink-0 w-[200px] rounded-2xl bg-white  p-3 text-left"
+                  className="shrink-0 w-[180px] sm:w-[200px] rounded-2xl bg-white  p-3 text-left"
                   onClick={() => openDetail(item)}
                 >
                   <div
@@ -258,14 +503,14 @@ export default function HistoryPage() {
                     />
                   </div>
 
-                  <div className="mt-2 text-base font-semibold text-center">
+                  <div className="mt-2 text-sm sm:text-base font-semibold text-center">
                     {item.title}
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-1 text-center">
+                  <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1 text-center">
                     {item.date}
                   </div>
-                  <div className="mt-2 text-[12px] text-gray-700 text-center">
-                    ★ / {item.rating}
+                  <div className="mt-2 text-[11px] sm:text-[12px] text-gray-700 text-center">
+                    {(item.rating ?? '-')}{' '} / 5
                   </div>
                 </button>
               ))}
@@ -346,20 +591,21 @@ export default function HistoryPage() {
                   }}
                 />
                 <div className="mt-3 text-center text-gray-800 font-semibold">
-                  난이도{' '}
-                  {detailItem?.difficulty ||
-                    (detailItem?.title === '축구'
-                      ? '상'
-                      : detailItem?.title === '러닝'
-                      ? '중'
-                      : '중')}
+                  난이도 {difficultyLabel ?? ''}
+                </div>
+                <div className="mt-2 text-center text-gray-600 text-sm px-2">
+                  {detailItem?.raw?.activity?.description ||
+                    detailItem?.raw?.description ||
+                    '설명 정보가 없습니다.'}
                 </div>
               </div>
 
               {/* 우측 정보 카드 */}
               <div className="flex-1">
                 <div className="relative rounded-3xl bg-white border border-gray-100 p-6">
-                  <div className="absolute right-4 top-4 text-3xl">☀️</div>
+                  <div className="absolute right-4 top-4 text-3xl">
+                    {weatherEmoji || null}
+                  </div>
 
                   <div className="space-y-5">
                     <div>
@@ -376,47 +622,100 @@ export default function HistoryPage() {
                         위치
                       </div>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className="text-gray-800">성남시 태평동</span>
-                        <span className="text-[11px] rounded-full bg-[#DBEAFE] text-[#3B82F6] px-2 py-[2px]">
-                          자세한 위치를 적어주세요
+                        <span className="text-gray-800">
+                          {detailItem?.locationAddress || '장소 미입력'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm font-semibold text-gray-700">
-                        활동유무
+                    {canRate ? (
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-semibold text-gray-700">
+                          활동유무
+                        </div>
+                        <span
+                          className={`inline-block h-3.5 w-3.5 rounded-full ${
+                            localParticipated ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
+                          }`}
+                        />
+                        <select
+                          value={localParticipated ? 'true' : 'false'}
+                          onChange={(e) => setLocalParticipated(e.target.value === 'true')}
+                          className="border rounded-md px-2 py-1 text-sm ml-2"
+                        >
+                          <option value="true">참여</option>
+                          <option value="false">미참여</option>
+                        </select>
                       </div>
-                      <span
-                        className={`inline-block h-3.5 w-3.5 rounded-full ${
-                          detailItem?.done ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
-                        }`}
-                      />
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-3 opacity-60">
+                        <div className="text-sm font-semibold text-gray-700">
+                          활동유무
+                        </div>
+                        <span className="inline-block h-3.5 w-3.5 rounded-full bg-gray-300" />
+                        <span className="text-xs text-gray-500">일정 날짜 이후에 설정할 수 있어요</span>
+                      </div>
+                    )}
 
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm font-semibold text-gray-700">
-                        평점
+                    {canRate ? (
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-semibold text-gray-700">
+                          평점
+                        </div>
+                        <select
+                          value={localRating}
+                          onChange={(e) => setLocalRating(Number(e.target.value))}
+                          className="border rounded-md px-2 py-1 text-sm"
+                        >
+                          {[5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1].map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <select
-                        defaultValue={detailItem?.rating || 5}
-                        className="border rounded-md px-2 py-1 text-sm"
-                      >
-                        {[5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1].map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-3 opacity-60">
+                        <div className="text-sm font-semibold text-gray-700">
+                          평점
+                        </div>
+                        <span className="text-xs text-gray-500">일정 날짜 이후에 설정할 수 있어요</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <ModalFooter>
                   <button
                     type="button"
-                    className="flex-1 rounded-xl bg-[#3B82F6] text-white py-3"
-                    onClick={closeDetail}
+                      className={`flex-1 rounded-xl text-white py-3 ${canRate ? 'bg-[#3B82F6]' : 'bg-gray-300 cursor-not-allowed'}`}
+                      disabled={!canRate}
+                      onClick={async () => {
+                        try {
+                          const scheduleId =
+                            detailItem?.raw?.scheduleId ?? detailItem?.id;
+                          if (!scheduleId) return closeDetail();
+                          await updateHistoryItem(scheduleId, {
+                            isParticipated: localParticipated,
+                            rating: localRating,
+                          });
+                          // fire-and-forget feedback for learning
+                          const raw = detailItem?.raw || {};
+                          const activityId =
+                            raw?.activity?.activityId ?? raw?.activityId;
+                          Feedback.send({
+                            activityId,
+                            rating: localRating,
+                            participated: localParticipated,
+                            scheduleDate: raw?.scheduleDate,
+                            scheduleTime: raw?.scheduleTime,
+                            locationAddress: raw?.locationAddress,
+                            source: 'HISTORY_MODAL',
+                          });
+                        } finally {
+                          closeDetail();
+                        }
+                      }}
                   >
                     저장하기
                   </button>

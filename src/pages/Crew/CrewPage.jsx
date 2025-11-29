@@ -1,13 +1,60 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Button from "components/Button";
 import CalendarBox from "mocks/Calender";
 import CrewListItem from "mocks/CrewListItem";
 import Modal, { ModalFooter } from "components/Modal/Modal";
 import InputField from "components/InputField";
+import { useAuthStore } from 'stores/auth';
+import { useCrewStore } from 'stores/crew';
+import CrewScheduleFormModal from 'components/CrewScheduleFormModal';
+import activities from 'constants/activities';
 
 export default function CrewPage() {
+  const { user } = useAuthStore();
+  const { myCrews, loadMyCrews, addCrew, removeMember, loadAllCrewSchedules, addCrewSchedule, joinByCode } = useCrewStore();
+  
+  // 전체 크루 일정 상태
+  const [allCrewSchedules, setAllCrewSchedules] = useState([]);
+  const [selectedDateEvents, setSelectedDateEvents] = useState([]);
+  const [openScheduleModal, setOpenScheduleModal] = useState(false);
+  const [openEventListModal, setOpenEventListModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedCrewForSchedule, setSelectedCrewForSchedule] = useState(null);
+  
+  // 현재 년/월 계산
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
 
-  //  파스텔톤 색상 팔레트
+
+  // 서버에서 크루 목록 로드
+  useEffect(() => {
+    if (user) {
+      loadMyCrews();
+    }
+  }, [user, loadMyCrews]);
+
+  // 전체 크루 일정 로드
+  useEffect(() => {
+    if (user) {
+      loadAllCrewSchedules(currentYear, currentMonth).then((schedules) => {
+        setAllCrewSchedules(schedules || []);
+      });
+    }
+  }, [user, currentYear, currentMonth, loadAllCrewSchedules]);
+
+  // API 응답 필드가 달라도 안전하게 매핑
+  const safeCrews = (myCrews || []).map((c) => ({
+    id: c.crewId ?? c.id,
+    name: c.crewName ?? c.name ?? '크루',
+    current: c.activeMemberCount ?? (Array.isArray(c.members) ? c.members.length : 0) ?? 1,
+    max: c.maxCapacity ?? c.max ?? 10,
+    color: c.colorCode ?? c.color ?? "#83C8FC",
+    inviteCode: c.inviteCode,
+    members: Array.isArray(c.members) ? c.members : [],
+  }));
+
+  // 파스텔톤 색상 팔레트
   const colorPalette = [
     "#FC8385",
     "#FCA883",
@@ -21,62 +68,187 @@ export default function CrewPage() {
     "#FCE683",
   ];
 
-  const [crews, setCrews] = useState([
-    { id: 1, name: "농구하조", current: 3, max: 5, color: "#FC8385" },
-    { id: 2, name: "활동하조", current: 3, max: 5, color: "#83C8FC" },
-  ]);
-  const [usedColors, setUsedColors] = useState(["#FC8385", "#83C8FC"]);
+  // 랜덤 색상 선택
+  const getRandomColor = () => {
+    return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+  };
 
   //  생성 모달
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [crewName, setCrewName] = useState("");
   const [crewMax, setCrewMax] = useState("");
 
+  //  가입 모달
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+
   //  탈퇴 완료 모달
   const [leaveTargetId, setLeaveTargetId] = useState(null);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
 
-  // 예시 크루 일정 데이터
-  const crewEvents = {
-    1: [
-      { date: "2025-11-04", label: "런닝" },
-      { date: "2025-11-12", label: "축구" },
-    ],
-    2: [
-      { date: "2025-11-07", label: "배구" },
-      { date: "2025-11-20", label: "등산" },
-    ],
+  //  공유 모달
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+
+  const handleShare = async (crew) => {
+    const code = crew.inviteCode;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch (_) {}
+    setShareUrl(code);
+    setShareOpen(true);
   };
 
-  // 랜덤 색상 선택 (중복 방지)
-  const getRandomColor = () => {
-    const availableColors = colorPalette.filter((c) => !usedColors.includes(c));
-    if (availableColors.length === 0) {
-      setUsedColors([]);
-      return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+  // 캘린더 이벤트를 CalendarBox 형식으로 변환 (모든 크루 일정 집계)
+  const calendarEvents = useMemo(() => {
+    return (allCrewSchedules || []).map((schedule) => {
+      const scheduleDate = schedule.scheduleDate || schedule.date;
+      const dateStr = scheduleDate
+        ? (typeof scheduleDate === 'string' ? scheduleDate.split('T')[0] : scheduleDate)
+        : '';
+
+      // 시간 HH:mm 추출 (백엔드가 scheduleDate만 줄 때 대비)
+      const timeFromScheduleDate = (() => {
+        const sd = schedule.scheduleDate || schedule.dateTime || schedule.datetime;
+        if (typeof sd === 'string' && sd.includes('T')) {
+          const hhmm = sd.split('T')[1]?.slice(0, 5);
+          return hhmm && /^\d{2}:\d{2}$/.test(hhmm) ? hhmm : undefined;
+        }
+        return undefined;
+      })();
+
+      // 활동명 매핑(백엔드가 id를 주면 상수에서 매핑, 다음으로 문자열 키)
+      const activityNameFromId = (() => {
+        const id =
+          schedule.activityId ||
+          (schedule.activity && (schedule.activity.id || schedule.activity.activityId)) ||
+          schedule.activityID ||
+          schedule.activity_id;
+        if (!id) return undefined;
+        const found = activities.find((a) => String(a.id) === String(id));
+        return found?.name;
+      })();
+
+      const activityText =
+        activityNameFromId ||
+        (typeof schedule.activity === 'string' && schedule.activity) ||
+        (schedule.activity && typeof schedule.activity.name === 'string' && schedule.activity.name) ||
+        (typeof schedule.activityName === 'string' && schedule.activityName) ||
+        (typeof schedule.activityLabel === 'string' && schedule.activityLabel) ||
+        (typeof schedule.activity_label === 'string' && schedule.activity_label) ||
+        '';
+
+      const crew = safeCrews.find(c => c.id === (schedule.crewId ?? schedule.crew?.id));
+
+      return {
+        date: dateStr,
+        label: activityText || (typeof schedule.label === 'string' ? schedule.label : '') || '활동',
+        activity: activityText,
+        place: schedule.locationAddress || schedule.place || schedule.location,
+        time: schedule.time || schedule.startTime || timeFromScheduleDate,
+        gear: schedule.equipmentList || schedule.gear || schedule.equipment,
+        crewScheduleId: schedule.crewScheduleId || schedule.id || schedule.scheduleId,
+        crewId: schedule.crewId ?? schedule.crew?.id,
+        crewName: crew?.name || '크루',
+        crewColor: crew?.color || '#83C8FC',
+      };
+    });
+  }, [allCrewSchedules, safeCrews]);
+
+  // 날짜 클릭 핸들러
+  const handleDateClick = (date, dayEvents) => {
+    console.log('top calendar click', date, dayEvents);
+    if (dayEvents && dayEvents.length > 0) {
+      setSelectedDateEvents(dayEvents);
+      setSelectedDate(date);
+      setOpenEventListModal(true);
+    } else {
+      // 일정이 없는 날짜 클릭 시 일정 생성 모달 열기 (크루 선택 필요)
+      setSelectedDate(date);
+      setOpenScheduleModal(true);
     }
-    const randomColor =
-      availableColors[Math.floor(Math.random() * availableColors.length)];
-    setUsedColors([...usedColors, randomColor]);
-    return randomColor;
   };
+
+  // 일정 생성 핸들러
+  const handleCreateSchedule = async (data, crewId) => {
+    if (!crewId) {
+      alert('크루를 선택해주세요.');
+      return;
+    }
+
+    try {
+      // 활동 ID 찾기
+      const activityObj = activities.find((a) => a.name === data.activity);
+      if (!activityObj) {
+        alert('활동을 찾을 수 없습니다.');
+        return;
+      }
+      const activityId = parseInt(activityObj.id, 10);
+
+      if (!data.date) {
+        alert('날짜를 선택해주세요.');
+        return;
+      }
+
+      // 시간 문자열을 객체로 변환
+      const timeStr = data.time || '12:00';
+      const [hour, minute] = timeStr.split(':').map(Number);
+
+      console.log('선택된 시간:', timeStr, '→ hour:', hour, 'minute:', minute);
+
+      if (isNaN(hour) || isNaN(minute)) {
+        alert('시간 형식이 올바르지 않습니다.');
+        return;
+      }
+
+      // Swagger 스펙에 맞는 요청 바디 형식 (time은 HH:mm:ss 문자열)
+      const schedulePayload = {
+        activityId: activityId,
+        date: data.date,
+        time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`,
+        equipmentList: data.gear || '',
+        locationAddress: data.place && data.place.trim() ? data.place.trim() : '',
+        locationLatitude: data.locationLatitude || 0,
+        locationLongitude: data.locationLongitude || 0,
+      };
+
+      const created = await addCrewSchedule(crewId, schedulePayload);
+      if (created) {
+        // 일정 목록 새로고침
+        const schedules = await loadAllCrewSchedules(currentYear, currentMonth);
+        setAllCrewSchedules(schedules || []);
+        setOpenScheduleModal(false);
+        setSelectedCrewForSchedule(null);
+        setSelectedDate(null);
+      } else {
+        alert('일정 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('일정 생성 오류:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류';
+      alert(`일정 생성 중 오류가 발생했습니다: ${errorMessage}`);
+    }
+  };
+
 
   // 크루 생성 로직
-  const handleCreateCrew = () => {
+  const handleCreateCrew = async () => {
     if (!crewName.trim() || !crewMax.trim()) return;
-
-    const newCrew = {
-      id: Date.now(),
-      name: crewName,
-      current: 1,
-      max: parseInt(crewMax, 10),
-      color: getRandomColor(),
-    };
-
-    setCrews((prev) => [...prev, newCrew]);
-    setCrewName("");
-    setCrewMax("");
-    setIsModalOpen(false);
+    try {
+      const cap = Math.max(1, Math.min(50, parseInt(crewMax, 10) || 1));
+      const randomColor = getRandomColor();
+      await addCrew({
+        crewName: crewName,
+        maxCapacity: cap,
+        colorCode: randomColor,
+      });
+      setCrewName("");
+      setCrewMax("");
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('크루 생성 실패:', error);
+    }
   };
 
   // CrewListItem에서 탈퇴 클릭 시 → 완료 모달 띄우기
@@ -86,15 +258,56 @@ export default function CrewPage() {
   };
 
   //  완료 클릭 시 실제 삭제
-  const handleLeaveConfirm = () => {
+  const handleLeaveConfirm = async () => {
     if (leaveTargetId == null) return;
-    setCrews((prev) => prev.filter((c) => c.id !== leaveTargetId));
-    setLeaveTargetId(null);
-    setLeaveModalOpen(false);
+    const targetUserId = user?.userId ?? user?.id;
+    if (!targetUserId) {
+      // 사용자 ID를 확인할 수 없으면 일단 모달만 닫고 종료
+      setLeaveTargetId(null);
+      setLeaveModalOpen(false);
+      return;
+    }
+
+    try {
+      const success = await removeMember(leaveTargetId, targetUserId);
+      if (success) {
+        // 탈퇴 성공 시 목록 새로고침
+        await loadMyCrews();
+      }
+    } catch (error) {
+      console.error('크루 탈퇴 실패:', error);
+    } finally {
+      setLeaveTargetId(null);
+      setLeaveModalOpen(false);
+    }
+  };
+
+  //  크루 가입 로직
+  const handleJoinCrew = async () => {
+    const code = (joinCode || '').trim();
+    if (!code) return alert('초대 코드를 입력해주세요.');
+    try {
+      const res = await joinByCode(code);
+      if (res === null) {
+        alert('가입에 실패했습니다. 코드를 확인해 주세요.');
+        return;
+      }
+      await loadMyCrews();
+      setJoinCode('');
+      setJoinOpen(false);
+      alert('크루에 가입되었습니다.');
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        '가입 중 오류가 발생했습니다.';
+      alert(msg);
+    }
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative">
+    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center relative pt-16 sm:pt-24 pb-12">
       <div
         className="
           w-[90vw] max-w-[952px]
@@ -105,12 +318,12 @@ export default function CrewPage() {
           shadow-sm
           flex flex-col items-center
           justify-start
-          pt-12 px-10 pb-10
-          overflow-hidden
+          pt-10 sm:pt-14 px-5 sm:px-12 pb-10 sm:pb-12
+          overflow-visible
         "
       >
         {/*  상단 버튼 */}
-        <div className="w-full flex justify-center">
+        <div className="w-full flex justify-center gap-3">
           <Button
             type="button"
             styleType="solid"
@@ -120,6 +333,15 @@ export default function CrewPage() {
           >
             크루 생성 +
           </Button>
+          <Button
+            type="button"
+            styleType="solid"
+            size="py-3.5 w-[200px] text-md"
+            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[50px] shadow-md transition-all duration-200"
+            onClick={() => setJoinOpen(true)}
+          >
+            크루 가입
+          </Button>
         </div>
 
         {/* 크루 목록 */}
@@ -128,20 +350,45 @@ export default function CrewPage() {
         </h2>
 
         <div className="w-full mt-4 px-6">
-          <div className="space-y-3">
-            {crews.map((c) => (
-              <CrewListItem
-                key={c.id}
-                id={c.id}
-                name={c.name}
-                current={c.current}
-                max={c.max}
-                color={c.color}
-                events={crewEvents[c.id] || []}
-                onLeave={handleLeaveRequest}   //  탈퇴 요청 핸들러
-              />
-            ))}
-          </div>
+          {!user ? (
+            <div className="rounded-2xl border border-gray-200 bg-white py-14 px-6 text-center text-gray-400">
+              <div className="text-base sm:text-lg">
+                사용자가 참여하고 있는 크루가 없습니다
+              </div>
+              <div className="mt-2 text-xs sm:text-sm text-gray-400">
+                크루를 생성하여 다른 사람과 함께 운동해요
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+
+              {safeCrews.length === 0 ? (
+                <div className="rounded-2xl border border-gray-200 bg-white py-14 px-6 text-center text-gray-400">
+                  <div className="text-base sm:text-lg">
+                    참여 중인 크루가 없습니다
+                  </div>
+                  <div className="mt-2 text-xs sm:text-sm text-gray-400">
+                    크루를 생성하여 다른 사람과 함께 운동해요
+                  </div>
+                </div>
+              ) : (
+                safeCrews.map((c) => (
+                  <CrewListItem
+                    key={c.id}
+                    id={c.id}
+                    name={c.name}
+                    current={c.current}
+                    max={c.max}
+                    color={c.color}
+                    members={c.members}
+                    onLeave={handleLeaveRequest}
+                    onShare={() => handleShare(c)}
+                  />
+                ))
+              )}
+
+            </div>
+          )}
         </div>
 
         {/* 캘린더 */}
@@ -150,7 +397,14 @@ export default function CrewPage() {
         </h3>
         <div className="mt-6 flex justify-center">
           {/* 이 캘린더만 X축 더 넓게 */}
-          <CalendarBox inline size="xl" wide />
+          <CalendarBox 
+            inline 
+            size="xl" 
+            wide 
+            accent="#111827"
+            events={calendarEvents}
+            onDateClick={handleDateClick}
+          />
         </div>
       </div>
 
@@ -175,7 +429,9 @@ export default function CrewPage() {
           <InputField
             id="crewMax"
             type="number"
-            placeholder="인원을 정해주세요"
+            placeholder="인원(최대 50)"
+            min={1}
+            max={50}
             value={crewMax}
             onChange={(e) => setCrewMax(e.target.value)}
           />
@@ -216,6 +472,169 @@ export default function CrewPage() {
         </ModalFooter>
       </Modal>
       </div>
+
+      {/* 크루 가입 모달 */}
+      <div style={{ '--modal-w-sm': '520px' }}>
+      <Modal
+        isOpen={joinOpen}
+        onClose={() => setJoinOpen(false)}
+        title="크루 가입"
+      >
+        <div className="flex flex-col gap-4 mt-4">
+          <label className="font-semibold text-lg text-black">초대 코드</label>
+          <InputField
+            id="inviteCode"
+            type="text"
+            placeholder="초대 코드를 입력하세요"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value)}
+          />
+          <ModalFooter>
+            <Button
+              type="button"
+              styleType="solid"
+              onClick={handleJoinCrew}
+              className="bg-[#3B82F6] text-white rounded-xl mt-2"
+            >
+              가입하기
+            </Button>
+          </ModalFooter>
+        </div>
+      </Modal>
+      </div>
+
+      {/* 공유 완료 모달 */}
+      <div style={{ '--modal-w-sm': '520px' }}>
+      <Modal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        hasCloseButton={false}
+        isCloseOutsideClick={true}
+        title=""
+      >
+        <div className="text-center py-6">
+          <div className="text-lg font-semibold">초대 코드가 복사되었습니다!</div>
+          <div className="mt-3 text-xs sm:text-sm text-gray-400 break-all">{shareUrl || '--------'}</div>
+        </div>
+        <ModalFooter>
+          <button
+            onClick={() => setShareOpen(false)}
+            className="flex-1 rounded-xl bg-[#4FBFF2] text-white py-3"
+          >
+            완료
+          </button>
+        </ModalFooter>
+      </Modal>
+      </div>
+
+      {/* 일정 목록 모달 (날짜 클릭 시) */}
+      <Modal
+        isOpen={openEventListModal}
+        onClose={() => {
+          setOpenEventListModal(false);
+          setSelectedDateEvents([]);
+          setSelectedDate(null);
+        }}
+        title={selectedDate ? `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일 일정` : '일정'}
+      >
+        <div className="mt-4 max-h-96 overflow-y-auto">
+          {selectedDateEvents.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">해당 날짜에 일정이 없습니다.</div>
+          ) : (
+            <div className="space-y-3">
+              {selectedDateEvents.map((event, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-lg border border-gray-200"
+                  style={{ borderLeftColor: event.crewColor, borderLeftWidth: '4px' }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="text-xs px-2 py-1 rounded-full text-white font-semibold"
+                      style={{ backgroundColor: event.crewColor }}
+                    >
+                      {event.crewName}
+                    </span>
+                    <span className="text-sm text-gray-500">{event.time || '시간 미지정'}</span>
+                  </div>
+                  <div className="font-semibold text-lg text-black">{event.activity || event.label}</div>
+                  {event.place && (
+                    <div className="text-sm text-gray-600 mt-1">장소 : {event.place}</div>
+                  )}
+                  {event.gear && (
+                    <div className="text-sm text-gray-500 mt-1">준비물 : {event.gear}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <button
+            onClick={() => {
+              setOpenEventListModal(false);
+              setSelectedDateEvents([]);
+              setSelectedDate(null);
+            }}
+            className="flex-1 rounded-xl bg-[#4FBFF2] text-white py-3"
+          >
+            닫기
+          </button>
+        </ModalFooter>
+      </Modal>
+
+      {/* 일정 생성 모달 (크루 선택 포함) */}
+      <Modal
+        isOpen={openScheduleModal}
+        onClose={() => {
+          setOpenScheduleModal(false);
+          setSelectedCrewForSchedule(null);
+          setSelectedDate(null);
+        }}
+        title="새 일정 만들기"
+      >
+        <div className="mt-4 space-y-4">
+          {/* 크루 선택 */}
+          <div>
+            <label className="font-semibold text-black block mb-2">크루 선택</label>
+            <select
+              value={selectedCrewForSchedule?.id || ''}
+              onChange={(e) => {
+                const crewId = parseInt(e.target.value, 10);
+                const crew = safeCrews.find(c => c.id === crewId);
+                setSelectedCrewForSchedule(crew || null);
+              }}
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black bg-white"
+            >
+              <option value="">크루를 선택하세요</option>
+              {safeCrews.map((crew) => (
+                <option key={crew.id} value={crew.id}>
+                  {crew.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 일정 생성 폼 */}
+          {selectedCrewForSchedule && (
+            <CrewScheduleFormModal
+              isOpen={true}
+              onClose={() => {
+                setOpenScheduleModal(false);
+                setSelectedCrewForSchedule(null);
+                setSelectedDate(null);
+              }}
+              title=""
+              color={selectedCrewForSchedule.color}
+              initialData={selectedDate ? { date: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` } : null}
+              onSave={(data) => {
+                handleCreateSchedule(data, selectedCrewForSchedule.id);
+              }}
+              showDelete={false}
+            />
+          )}
+        </div>
+      </Modal>
     </main>
   );
 }

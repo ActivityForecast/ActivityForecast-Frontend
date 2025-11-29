@@ -38,6 +38,29 @@ export const validateConfirmPassword = (value) => {
   return undefined;
 };
 
+export const validatePasswordOptional = (value) => {
+  if (!value.trim()) return undefined;
+  return validatePassword(value);
+};
+
+export const makeConfirmPasswordValidator = (newPasswordValueOrGetter) => {
+  return (value) => {
+    const newPw =
+      typeof newPasswordValueOrGetter === 'function'
+        ? newPasswordValueOrGetter()
+        : newPasswordValueOrGetter;
+
+    const hasNew = !!(newPw && newPw.trim());
+    const hasConfirm = !!(value && value.trim());
+
+    if (!hasNew && !hasConfirm) return undefined;
+
+    if (!hasConfirm) return '비밀번호 확인을 입력해주세요.';
+    if (value !== newPw) return '비밀번호가 일치하지 않습니다.';
+    return undefined;
+  };
+};
+
 export const validateUserUpdated = (prevData, newData) => {
   const isNicknameChanged =
     prevData.nickname.trim() !== newData.nickname.trim();

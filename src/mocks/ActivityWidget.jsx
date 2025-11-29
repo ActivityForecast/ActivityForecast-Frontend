@@ -11,12 +11,15 @@ export default function ActivityWidget({
   ],
   withBorder = true,
   gapClass = "gap-44",
+  className = "",
+  svgClassName = "w-[120px] sm:w-[140px]",
 }) {
-  const size = 160;
+  // 내부 좌표계 크기(뷰박스). 실제 픽셀 크기는 svgClassName으로 제어
+  const size = 140;
   const cx = size / 2;
   const cy = size / 2;
-  const innerRadius = 32; // 두께 UP
-  const outerRadius = 64; // 두께 UP
+  const innerRadius = 28;
+  const outerRadius = 56;
   const gapDeg = 1.5;
 
   // ✅ 조각 정보 계산
@@ -32,6 +35,7 @@ export default function ActivityWidget({
     });
     return { totalCount, segs };
   }, [segments, gapDeg]);
+
 
   const arcPath = (r1, r2, a0, a1) => {
     const A0 = (Math.PI / 180) * a0;
@@ -56,14 +60,19 @@ export default function ActivityWidget({
 
   const leader = (angleDeg) => {
     const rad = (Math.PI / 180) * angleDeg;
-    const r = outerRadius + 6;
+    const r = outerRadius + 4;
     const x0 = cx + r * Math.cos(rad);
     const y0 = cy + r * Math.sin(rad);
-    const x1 = cx + (r + 14) * Math.cos(rad);
-    const y1 = cy + (r + 14) * Math.sin(rad);
+    const x1 = cx + (r + 8) * Math.cos(rad);
+    const y1 = cy + (r + 8) * Math.sin(rad);
     const isRight = Math.cos(rad) >= 0;
-    const x2 = x1 + (isRight ? 12 : -12);
+    let x2 = x1 + (isRight ? 8 : -8);
     const y2 = y1;
+    // clamp to keep label inside svg bounds
+    const margin = 6;
+    const minX = margin;
+    const maxX = size - margin;
+    x2 = Math.max(minX, Math.min(maxX, x2));
     return { x0, y0, x1, y1, x2, y2, isRight };
   };
 
@@ -80,7 +89,7 @@ export default function ActivityWidget({
 
   return (
     <div
-      className={`rounded-2xl bg-white p-4 sm:p-5 ${withBorder ? "border" : ""}`}
+      className={`rounded-2xl bg-white px-5 sm:px-6 pt-7 sm:pt-8 pb-5 sm:pb-6 ${withBorder ? "border" : ""} ${className}`}
       style={withBorder ? { borderColor: accent, borderWidth: 1, borderOpacity: 0.3 } : undefined}
     >
       {/* 타이틀 */}
@@ -89,14 +98,18 @@ export default function ActivityWidget({
       <div className={`grid grid-cols-[auto_auto] items-center justify-center ${gapClass}`}>
         {/* 왼쪽 큰 숫자 */}
         <div className="flex items-center gap-1">
-          <span className="text-6xl font-extrabold" style={{ color: accent }}>
+          <span className="text-4xl sm:text-6xl font-extrabold" style={{ color: accent }}>
             {total}
           </span>
-          <span className="text-2xl font-extrabold text-black relative top-3 leading-none">회</span>
+          <span className="text-lg sm:text-2xl font-extrabold text-black relative top-3 leading-none">회</span>
         </div>
 
         {/* 오른쪽 도넛 그래프 */}
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <svg
+          viewBox={`0 0 ${size} ${size}`}
+          className={`${svgClassName} h-auto`}
+          style={{ overflow: 'visible' }}
+        >
           {segs.map((s, i) => (
             <path
               key={i}
@@ -112,18 +125,20 @@ export default function ActivityWidget({
           {/* ✅ 보조선 + 숫자도 크루 색상으로 통일 */}
           {segs.map((s, i) => {
             const { x0, y0, x1, y1, x2, y2, isRight } = leader(s.mid);
+            const labelText = `${s.label ?? ''} ${s.count}회`;
             return (
-              <g key={`lbl-${i}`} stroke={accent} fill={accent}>
-                <line x1={x0} y1={y0} x2={x1} y2={y1} strokeWidth="1.5" />
-                <line x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1.5" />
+              <g key={`lbl-${i}`}>
+                <line x1={x0} y1={y0} x2={x1} y2={y1} stroke={accent} strokeWidth="1.5" />
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={accent} strokeWidth="1.5" />
                 <text
-                  x={x2 + (isRight ? 4 : -4)}
+                  x={x2 + (isRight ? 6 : -6)}
                   y={y2 - 2}
                   textAnchor={isRight ? "start" : "end"}
-                  fontSize="12"
+                  fontSize="11"
                   fontWeight="600"
+                  fill={accent}
                 >
-                  {s.count}
+                  {labelText}
                 </text>
               </g>
             );

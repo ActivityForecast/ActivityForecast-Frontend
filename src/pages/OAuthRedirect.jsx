@@ -12,8 +12,8 @@ export default function OAuthRedirect() {
     (async () => {
       try {
         const success = search.get('success');
-        const token = search.get('token');               
-        const refreshToken = search.get('refreshToken');  
+        const token = search.get('token');
+        const refreshToken = search.get('refreshToken');
         const error = search.get('error');
         const message = search.get('message');
 
@@ -41,7 +41,11 @@ export default function OAuthRedirect() {
 
         nav('/', { replace: true });
       } catch (e) {
-        setErr(e?.response?.data?.message || e?.message || '카카오 로그인 처리 중 오류');
+        setErr(
+          e?.response?.data?.message ||
+            e?.message ||
+            '카카오 로그인 처리 중 오류'
+        );
       }
     })();
   }, [nav, search]);

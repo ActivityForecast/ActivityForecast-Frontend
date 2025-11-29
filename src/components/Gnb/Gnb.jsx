@@ -19,7 +19,7 @@ function Gnb() {
   }, [accessToken, user, loadMe]);
 
   const renderCenterSlot = () => {
-    if (location.pathname === '/') 
+    if (location.pathname === '/' || '/detail') 
       return <LocationSelector />;
     if (location.pathname.startsWith('/history')) 
       return <span className="text-base sm:text-lg font-semibold select-none">히스토리</span>;
@@ -31,7 +31,7 @@ function Gnb() {
   };
 
   return (
-    <header className="flex items-center justify-between h-14 px-2 sm:px-6 border-b bg-white">
+    <header className="sticky top-0 z-50 flex items-center justify-between h-14 px-2 sm:px-6 border-b bg-white">
       <div className="flex items-center sm:gap-2">
         <Menu />
         <Home />

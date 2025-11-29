@@ -1,9 +1,8 @@
-import {  useState } from 'react';
+import { useState } from 'react';
 import { ReactComponent as EditPencilIcon } from 'assets/icons/pencil.svg';
 import Button from 'components/Button';
 import ProfileEditForm from './ProfileEditForm';
 import { useAuthStore } from 'stores/auth';
-
 
 export default function ProfileEdit() {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,7 +17,7 @@ export default function ProfileEdit() {
           </div>
           <div className="mt-2 text-lg text-gray-600">
             <div>{user.email}</div>
-            <div className='text-base'>비밀번호: {'•'.repeat(8)}</div>
+            <div className="text-base">비밀번호: {'•'.repeat(8)}</div>
           </div>
         </div>
 

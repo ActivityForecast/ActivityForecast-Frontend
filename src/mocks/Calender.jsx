@@ -18,6 +18,7 @@ export default function CalendarBox({
   className = '',
   size = 'md', // 'md' | 'lg' | 'xl' (mini는 mode로 제어)
   wide = false, // 가로만 더 넓게
+  onDateClick, // 날짜 클릭 핸들러 (date: Date, events: Array)
 }) {
   const [view, setView] = useState(new Date());
 
@@ -133,6 +134,7 @@ export default function CalendarBox({
       className={`${
         inline ? 'relative' : 'fixed'
       } bg-white ${wrapCls} ${cardPad} ${className}`}
+      style={isMini ? { borderColor: accent } : undefined}
     >
       {/* 헤더 */}
       <div className="flex items-center justify-between">
@@ -197,14 +199,21 @@ export default function CalendarBox({
           const hasEvt = eventMap.has(k);
           return (
             <div key={idx} className="flex items-center justify-center py-1">
-              <div
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDateClick && !other) {
+                    const dayEvents = hasEvt ? eventMap.get(k) : [];
+                    onDateClick(d, dayEvents);
+                  }
+                }}
                 className={`grid place-items-center rounded-full border ${cellH} ${cellW} ${numClass}
                   ${
                     other
-                      ? 'text-gray-300 border-transparent'
-                      : 'text-black border-transparent'
+                      ? 'text-gray-300 border-transparent cursor-default'
+                      : 'text-black border-transparent cursor-pointer'
                   }
-                  hover:bg-gray-50`}
+                  hover:bg-gray-50 transition`}
                 style={
                   hasEvt
                     ? { borderColor: `${accent}55`, color: '#000' }
@@ -218,6 +227,7 @@ export default function CalendarBox({
                         .join(', ')
                     : undefined
                 }
+                disabled={other}
               >
                 {d.getDate()}
                 {/* 이벤트 점 */}
@@ -227,7 +237,7 @@ export default function CalendarBox({
                     style={{ backgroundColor: accent }}
                   />
                 )}
-              </div>
+              </button>
             </div>
           );
         })}

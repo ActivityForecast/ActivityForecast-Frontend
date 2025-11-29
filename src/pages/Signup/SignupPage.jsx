@@ -9,11 +9,16 @@ export default function SignupPage() {
   const [err, setErr] = useState('');
   const navigate = useNavigate();
 
-  const handleSignup = async ({ name, email, password, preferredActivityIds }) => {
+  const handleSignup = async ({
+    name,
+    email,
+    password,
+    preferredActivityIds,
+  }) => {
     setErr('');
     try {
       await signup({ name, email, password, preferredActivityIds });
-      navigate('/', { replace: true });
+      navigate('/home', { replace: true });
     } catch (e) {
       const msg = e?.response?.data?.message || '회원가입에 실패했어요.';
       setErr(msg);
@@ -23,7 +28,7 @@ export default function SignupPage() {
   useEffect(() => {
     if (!isLoading && user) {
       const timer = setTimeout(() => {
-        navigate('/', { replace: true });
+        navigate('/home', { replace: true });
       }, 300);
       return () => clearTimeout(timer);
     }

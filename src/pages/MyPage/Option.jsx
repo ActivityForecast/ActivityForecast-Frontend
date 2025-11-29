@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from 'components/Button';
 import { ReactComponent as CautionIcon } from 'assets/icons/caution.svg';
 import { ReactComponent as QuestionIcon } from 'assets/icons/question.svg';
@@ -11,33 +11,70 @@ import HelpModal from './HelpModal';
 import { useAuthStore } from 'stores/auth';
 import { useNavigate } from 'react-router-dom';
 
-export default function Option() {
-  const [openWithdraw, setOpenWithdraw] = useState(false);
-  const [openPrefModal, setOpenPrefModal] = useState(false);
-  const [openHelp, setOpenHelp] = useState(false);
-  const [prefSelected, setPrefSelected] = useState({
+const CATEGORIES = ['유산소', '구기스포츠', '익스트림스포츠', '피트니스'];
+const emptySelected = {
+  유산소: [],
+  구기스포츠: [],
+  익스트림스포츠: [],
+  피트니스: [],
+};
+
+function groupByCategory(ids) {
+  const grouped = {
+    ...emptySelected,
     유산소: [],
     구기스포츠: [],
     익스트림스포츠: [],
     피트니스: [],
+  };
+  ids.forEach((id) => {
+    const item = activities.find((a) => a.id === id);
+    if (item && CATEGORIES.includes(item.category)) {
+      grouped[item.category].push(id);
+    }
   });
+  return grouped;
+}
 
-   const { logout } = useAuthStore();
+export default function Option() {
+  const [openWithdraw, setOpenWithdraw] = useState(false);
+  const [openPrefModal, setOpenPrefModal] = useState(false);
+  const [openHelp, setOpenHelp] = useState(false);
+  const [prefSelected, setPrefSelected] = useState(emptySelected);
+
   const navigate = useNavigate();
 
-  const handlePrefClick = () => {
-    setOpenPrefModal(true);
-  };
+  const { logout, deleteAccount, savePreferences, refreshMe, user } =
+    useAuthStore();
 
-  const handleHelpClick = () => {
-    setOpenHelp(true);
-  };
+  useEffect(() => {
+    const init = async () => {
+      let ids = Array.isArray(user?.preferredActivityIds)
+        ? user.preferredActivityIds
+        : null;
+      if (!ids) {
+        try {
+          const me = await refreshMe();
+          ids = Array.isArray(me?.preferredActivityIds)
+            ? me.preferredActivityIds
+            : Array.isArray(me?.preferences)
+            ? me.preferences.map((p) => p.activityId)
+            : [];
+        } catch {
+          ids = [];
+        }
+      }
+      setPrefSelected(groupByCategory(ids));
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
-  const handleLeaveClick = () => {
-    setOpenWithdraw(true);
-  };
+  const handlePrefClick = () => setOpenPrefModal(true);
+  const handleHelpClick = () => setOpenHelp(true);
+  const handleLeaveClick = () => setOpenWithdraw(true);
 
-   const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       await logout();
     } finally {
@@ -45,15 +82,25 @@ export default function Option() {
     }
   };
 
-  const handleConfirmWithdraw = () => {
-    setOpenWithdraw(false);
-    alert('회원탈퇴 플로우 예정');
+  const handleConfirmWithdraw = async ({ password, reason }) => {
+    try {
+      await deleteAccount({ password, reason });
+      setOpenWithdraw(false);
+      navigate('/', { replace: true });
+    } catch (e) {
+      alert(e?.response?.data?.message || '회원탈퇴에 실패했어요.');
+    }
   };
 
-  const handleConfirmPref = (payload) => {
-    setPrefSelected(payload); // 추가: API에서 기존 값을 가져오거나 로컬스토리지에 저장해서 연동하는 방식 검토
-    setOpenPrefModal(false);
-    // 추가: API 호출로 선호 저장
+  const handleConfirmPref = async (ids) => {
+    try {
+      await savePreferences(ids);
+      await refreshMe().catch(() => {});
+      setPrefSelected(groupByCategory(ids));
+      setOpenPrefModal(false);
+    } catch (e) {
+      alert(e?.response?.data?.message || '선호 활동 저장에 실패했어요.');
+    }
   };
 
   return (
@@ -114,14 +161,14 @@ export default function Option() {
       />
 
       <HelpModal open={openHelp} onClose={() => setOpenHelp(false)} />
-        
+
       <ActivitySelectModal
-       isOpen={openPrefModal}
-       onClose={() => setOpenPrefModal(false)}
-       onConfirm={handleConfirmPref}
-       activities={activities}
-      initialSelected={prefSelected}
-    />
+        isOpen={openPrefModal}
+        onClose={() => setOpenPrefModal(false)}
+        onConfirm={handleConfirmPref}
+        activities={activities}
+        initialSelected={prefSelected}
+      />
     </>
   );
 }
