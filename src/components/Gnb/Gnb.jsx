@@ -19,14 +19,31 @@ function Gnb() {
   }, [accessToken, user, loadMe]);
 
   const renderCenterSlot = () => {
-    if (location.pathname === '/' || '/detail') 
-      return <LocationSelector />;
-    if (location.pathname.startsWith('/history')) 
-      return <span className="text-base sm:text-lg font-semibold select-none">히스토리</span>;
-    if (location.pathname.startsWith('/mypage'))  
-      return <span className="text-base sm:text-lg font-semibold select-none">마이페이지</span>;
-    if (location.pathname.startsWith('/crew'))    
-      return <span className="text-base sm:text-lg font-semibold select-none">크루페이지</span>;
+    if (location.pathname === '/' || '/detail') return <LocationSelector />;
+    if (location.pathname.startsWith('/history'))
+      return (
+        <span className="text-base sm:text-lg font-semibold select-none">
+          히스토리
+        </span>
+      );
+    if (location.pathname.startsWith('/mypage'))
+      return (
+        <span className="text-base sm:text-lg font-semibold select-none">
+          마이페이지
+        </span>
+      );
+    if (location.pathname.startsWith('/crew'))
+      return (
+        <span className="text-base sm:text-lg font-semibold select-none">
+          크루페이지
+        </span>
+      );
+    if (location.pathname.startsWith('/admin'))
+      return (
+        <span className="text-base sm:text-lg font-semibold select-none">
+          관리자페이지
+        </span>
+      );
     return null;
   };
 
@@ -40,8 +57,13 @@ function Gnb() {
       <div className="flex items-center">{renderCenterSlot()}</div>
 
       <div className="flex items-center gap-1 sm:gap-2">
-        {user ? <><ProfileDropdown /> <Notification /></> : <LoginMenu />}
-        
+        {user ? (
+          <>
+            <ProfileDropdown /> <Notification />
+          </>
+        ) : (
+          <LoginMenu />
+        )}
       </div>
     </header>
   );
