@@ -9,6 +9,7 @@ import HistoryPage from 'pages/History/HistoryPage';
 import OAuthRedirect from 'pages/OAuthRedirect';
 import DetailPage from 'pages/Detail/DetailPage';
 import LandingPage from 'pages/Landing/LandingPage';
+import AdminPage from 'pages/Admin/AdminPage';
 
 function App() {
   const location = useLocation();
@@ -26,6 +27,7 @@ function App() {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/auth/oauth2/redirect" element={<OAuthRedirect />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </div>
   );
