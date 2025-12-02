@@ -19,7 +19,11 @@ function Gnb() {
   }, [accessToken, user, loadMe]);
 
   const renderCenterSlot = () => {
-    if (location.pathname === '/' || '/detail') return <LocationSelector />;
+    if (
+      location.pathname === '/home' ||
+      location.pathname.startsWith('/detail')
+    )
+      return <LocationSelector />;
     if (location.pathname.startsWith('/history'))
       return (
         <span className="text-base sm:text-lg font-semibold select-none">
