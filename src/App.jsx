@@ -9,7 +9,7 @@ import HistoryPage from 'pages/History/HistoryPage';
 import OAuthRedirect from 'pages/OAuthRedirect';
 import DetailPage from 'pages/Detail/DetailPage';
 import LandingPage from 'pages/Landing/LandingPage';
-import AdminPage from 'pages/Admin/AdminPage';  
+import AdminPage from 'pages/Admin/AdminPage';
 import AdminFeedbackPage from 'pages/Admin/Feedbacks';
 
 function App() {
