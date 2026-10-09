@@ -9,4 +9,4 @@ AI 기반 개인화 야외활동 추천 서비스의 프론트입니다.
 - 크루 커뮤니티를 통한 크루원과의 그룹 활동 연계
 
 ## 배포 주소
-https://activityforecast.netlify.app/
+~~https://activityforecast.netlify.app~~ 현재 작동하지 않습니다.
